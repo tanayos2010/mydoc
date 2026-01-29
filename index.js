@@ -49,20 +49,24 @@ app.post('/submit', upload.single('pdfFile'), async (req, res) => {
         }
 
         const payload = {
-            ...req.body, // ข้อมูล Text ทั้งหมด
-            sheetName: req.body.sheetName, // ชื่อ Sheet ที่ส่งมาจาก Dropdown
+            ...req.body, 
+            sheetName: req.body.sheetName,
             fileData: fileData,
             fileName: fileName,
-            mimeType: mimeType
+            mimeType: mimeType,
+            // ส่งค่า action และ rowIndex (ถ้ามี) ไปให้ Google
+            action: req.body.action, 
+            rowIndex: req.body.rowIndex,
+            oldFileUrl: req.body.oldFileUrl // ส่งลิงก์เดิมไปด้วย กรณีแก้ข้อมูลแต่ไม่อัปไฟล์ใหม่
         };
 
         await axios.post(GAS_API_URL, payload);
 
-        res.json({ status: 'success', message: 'บันทึกสำเร็จ' });
+        res.json({ status: 'success', message: 'ดำเนินการสำเร็จ' });
 
     } catch (error) {
-        console.error("Error submitting data:", error.message);
-        res.status(500).json({ status: 'error', message: 'เกิดข้อผิดพลาดที่ Server' });
+        console.error("Error:", error.message);
+        res.status(500).json({ status: 'error', message: 'เกิดข้อผิดพลาด' });
     }
 });
 
