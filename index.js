@@ -30,10 +30,16 @@ app.get('/api/data', async (req, res) => {
 
 app.get('/api/settings', async (req, res) => {
     try {
+        console.log("กำลังดึง Settings..."); // <--- เพิ่มบรรทัดนี้
         const response = await axios.get(`${GAS_API_URL}?type=settings`);
+        console.log("ผลลัพธ์จาก Google:", response.data); // <--- เพิ่มบรรทัดนี้
+        
         if (typeof response.data !== 'object') res.json({});
         else res.json(response.data);
-    } catch (error) { res.json({}); }
+    } catch (error) {
+        console.error("Error ดึง Settings:", error.message); // <--- เพิ่มบรรทัดนี้
+        res.json({});
+    }
 });
 
 app.post('/api/save-settings', async (req, res) => {
