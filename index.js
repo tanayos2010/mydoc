@@ -40,23 +40,39 @@ app.get('/api/data', async (req, res) => {
 // 2. ดึงข้อมูลการตั้งค่า (Settings) **จุดสำคัญ**
 app.get('/api/settings', async (req, res) => {
     try {
-        // เพิ่ม Log เพื่อดูว่า Server ติดต่อ Google ได้จริงไหม
-        console.log("Fetching Settings from Google..."); 
+        console.log("------------------------------------------------");
+        console.log("1. กำลังเรียกข้อมูล Settings จาก Google...");
         
         const response = await axios.get(`${GAS_API_URL}?type=settings`);
         
-        console.log("Response Status:", response.status);
-        console.log("Response Data Preview:", JSON.stringify(response.data).substring(0, 100) + "...");
+        console.log("2. สถานะตอบกลับ (Status):", response.status);
+        console.log("3. ประเภทข้อมูล (Content-Type):", response.headers['content-type']);
+        
+        // ลองแปลงข้อมูลเป็น String เพื่อดูว่าหน้าตาเป็นยังไง
+        const dataString = JSON.stringify(response.data);
+        console.log("4. ข้อมูลที่ได้ (Data Preview):", dataString.substring(0, 200)); // ดูแค่ 200 ตัวอักษรแรก
+
+        // เช็คว่าเป็น HTML หรือเปล่า (ถ้าใช่ แสดงว่า URL ผิด หรือ สิทธิ์ผิด)
+        if (typeof response.data === 'string' && response.data.trim().startsWith('<')) {
+            console.error("!!! ERROR: ได้รับ HTML แทนที่จะเป็น JSON (สิทธิ์การเข้าถึงอาจจะผิด)");
+            // บังคับส่งค่า Default ให้หน้าเว็บทำงานต่อได้
+            return res.json({
+                sheet: [{ label: "สมุดสำรอง (Connection Error)", value: "Sheet1" }]
+            });
+        }
 
         if (typeof response.data !== 'object') {
-            console.error("Settings Error: Received invalid format");
+            console.error("!!! ERROR: รูปแบบข้อมูลไม่ถูกต้อง");
             res.json({});
         } else {
+            console.log(">>> สำเร็จ! ส่งข้อมูลไปหน้าเว็บ");
             res.json(response.data);
         }
+        console.log("------------------------------------------------");
+
     } catch (error) {
-        console.error("Settings Exception:", error.message);
-        if(error.response) console.error("Error Detail:", error.response.data);
+        console.error("!!! CRITICAL ERROR:", error.message);
+        // กรณีเชื่อมต่อไม่ได้จริงๆ ส่งค่าว่างกลับไป
         res.json({});
     }
 });
@@ -120,3 +136,4 @@ app.post('/submit', upload.single('pdfFile'), async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
