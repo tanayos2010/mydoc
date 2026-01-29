@@ -193,31 +193,50 @@
         try {
             const response = await fetch('/api/settings');
             const data = await response.json();
-            if(data && Object.keys(data).length > 0) globalSettings = data;
+            
+            // ถ้า Server ส่งข้อมูลมา ให้ใช้ข้อมูลนั้น
+            if(data && Object.keys(data).length > 0) {
+                globalSettings = data;
+            } else {
+                console.warn("ไม่พบข้อมูล Settings จาก Server");
+            }
             
             // Populate Dropdowns
-            // 1. สมุดทะเบียน (ไม่เอาช่องว่าง)
+            // สมุดทะเบียน (ไม่เอาช่องว่าง)
             populateDropdown('#viewSheetSelector', globalSettings.sheet, true, false);
             populateDropdown('#formSheetName', globalSettings.sheet, false, false);
             populateDropdown('#importSheetName', globalSettings.sheet, false, false);
 
-            // 2. ข้อมูลทั่วไป (เพิ่ม true ตัวหลังสุด เพื่อขอช่องว่าง)
+            // ข้อมูลทั่วไป (เอาช่องว่าง includeBlank = true)
             populateDropdown('#formSecret', globalSettings.secret, false, true);
             populateDropdown('#formSpeed', globalSettings.speed, false, true);
             populateDropdown('#formDept', globalSettings.dept, false, true);
             populateDropdown('#formWorker', globalSettings.worker, false, true);
             populateDropdown('#formMethod', globalSettings.method, false, true);
-        } catch (err) { console.error(err); }
+
+        } catch (err) { console.error("Error loading settings:", err); }
     }
 
     function populateDropdown(selector, items, includeAll = false) {
         const dropdown = $(selector);
         dropdown.empty();
-        if(includeAll) dropdown.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
+        
+        // 1. ตัวเลือก "ค้นหาทั้งหมด" (สำหรับหน้าหลัก)
+        if(includeAll) {
+            dropdown.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
+        }
+
+        // 2. ตัวเลือก "ว่าง" (สำหรับข้อมูลที่ไม่บังคับ)
         if(includeBlank) {
-        dropdown.append('<option value="">-</option>');
-    }
-        if (items) items.forEach(item => dropdown.append(`<option value="${item.value}">${item.label}</option>`));
+            dropdown.append('<option value="">-</option>');
+        }
+
+        // 3. ตัวเลือกจาก Database
+        if (items && items.length > 0) {
+            items.forEach(item => {
+                dropdown.append(`<option value="${item.value}">${item.label}</option>`);
+            });
+        }
     }
 
     // --- Settings Logic Fix ---
