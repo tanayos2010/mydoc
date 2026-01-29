@@ -178,10 +178,10 @@
     $(document).ready(function() {
         loadGlobalSettings().then(() => {
             const initialSheet = $('#viewSheetSelector').val();
-            // ถ้าโหลดมาแล้วไม่มีสมุดสักเล่ม ให้แสดงเตือน
-            if(!initialSheet) {
+            // ถ้าโหลด Settings เสร็จแล้วไม่มี Sheet เลย ให้แจ้งเตือน
+            if(!initialSheet && globalSettings.sheet.length === 0) {
                 Swal.fire('ยินดีต้อนรับ', 'กรุณาไปที่ปุ่ม "เฟือง" เพื่อตั้งค่าสมุดทะเบียนก่อนใช้งานนะครับ', 'info');
-            } else {
+            } else if (initialSheet) {
                 loadTableData(initialSheet);
             }
         });
@@ -189,57 +189,37 @@
         $('#excelPasteArea').on('input', function() { parseExcelData($(this).val()); });
     });
 
+    // --- Settings & Dropdown Logic ---
     async function loadGlobalSettings() {
         try {
             const response = await fetch('/api/settings');
             const data = await response.json();
+            if(data && Object.keys(data).length > 0) globalSettings = data;
             
-            // ถ้า Server ส่งข้อมูลมา ให้ใช้ข้อมูลนั้น
-            if(data && Object.keys(data).length > 0) {
-                globalSettings = data;
-            } else {
-                console.warn("ไม่พบข้อมูล Settings จาก Server");
-            }
-            
-            // Populate Dropdowns
-            // สมุดทะเบียน (ไม่เอาช่องว่าง)
+            // Populate (ส่ง true = เอา All, false = เอาช่องว่าง)
             populateDropdown('#viewSheetSelector', globalSettings.sheet, true, false);
             populateDropdown('#formSheetName', globalSettings.sheet, false, false);
             populateDropdown('#importSheetName', globalSettings.sheet, false, false);
-
-            // ข้อมูลทั่วไป (เอาช่องว่าง includeBlank = true)
+            
+            // Populate หมวดอื่นๆ (เอาช่องว่าง includeBlank = true)
             populateDropdown('#formSecret', globalSettings.secret, false, true);
             populateDropdown('#formSpeed', globalSettings.speed, false, true);
             populateDropdown('#formDept', globalSettings.dept, false, true);
             populateDropdown('#formWorker', globalSettings.worker, false, true);
             populateDropdown('#formMethod', globalSettings.method, false, true);
 
-        } catch (err) { console.error("Error loading settings:", err); }
+        } catch (err) { console.error(err); }
     }
 
-    function populateDropdown(selector, items, includeAll = false) {
+    function populateDropdown(selector, items, includeAll = false, includeBlank = false) {
         const dropdown = $(selector);
         dropdown.empty();
-        
-        // 1. ตัวเลือก "ค้นหาทั้งหมด" (สำหรับหน้าหลัก)
-        if(includeAll) {
-            dropdown.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
-        }
+        if(includeAll) dropdown.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
+        if(includeBlank) dropdown.append('<option value="">-</option>'); // เพิ่มตัวเลือก "ว่าง"
 
-        // 2. ตัวเลือก "ว่าง" (สำหรับข้อมูลที่ไม่บังคับ)
-        if(includeBlank) {
-            dropdown.append('<option value="">-</option>');
-        }
-
-        // 3. ตัวเลือกจาก Database
-        if (items && items.length > 0) {
-            items.forEach(item => {
-                dropdown.append(`<option value="${item.value}">${item.label}</option>`);
-            });
-        }
+        if (items) items.forEach(item => dropdown.append(`<option value="${item.value}">${item.label}</option>`));
     }
 
-    // --- Settings Logic Fix ---
     function openSettingsModal() {
         currentCategoryEdit = 'sheet';
         renderSettingTable('sheet');
@@ -247,8 +227,8 @@
     }
 
     function switchCategory(newCategory) {
-        captureCurrentTableData(); // จำค่าหน้าเก่าก่อน
-        renderSettingTable(newCategory); // แล้วค่อยเรนเดอร์หน้าใหม่
+        captureCurrentTableData();
+        renderSettingTable(newCategory);
     }
 
     function captureCurrentTableData() {
@@ -260,7 +240,7 @@
                 if(l && v) currentItems.push({label: l, value: v});
             } else {
                 const v = $(this).find('.set-single-value').val().trim();
-                if(v) currentItems.push({label: v, value: v}); // Label = Value สำหรับหมวดทั่วไป
+                if(v) currentItems.push({label: v, value: v});
             }
         });
         globalSettings[currentCategoryEdit] = currentItems;
@@ -270,22 +250,20 @@
         currentCategoryEdit = category;
         $('.nav-link').removeClass('active');
         $(`.nav-link[onclick="switchCategory('${category}')"]`).addClass('active');
+        $('#settingCategoryTitle').text(getCategoryTitle(category));
 
-        const titles = { sheet: 'สมุดทะเบียน', secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
-        $('#settingCategoryTitle').text(titles[category]);
+        const thead = $('#settingsTable thead'); thead.empty();
+        if (category === 'sheet') thead.append('<tr><th>ชื่อที่แสดง (เช่น ปี 67)</th><th>ชื่อ Sheet (เช่น Sheet67)</th><th style="width:50px">ลบ</th></tr>');
+        else thead.append('<tr><th>ชื่อข้อมูล</th><th style="width:50px">ลบ</th></tr>');
 
-        const thead = $('#settingsTable thead');
-        thead.empty();
-        if (category === 'sheet') {
-            thead.append('<tr><th>ชื่อที่แสดง (เช่น ปี 67)</th><th>ชื่อ Sheet (เช่น Sheet67)</th><th style="width:50px">ลบ</th></tr>');
-        } else {
-            thead.append('<tr><th>ชื่อข้อมูล</th><th style="width:50px">ลบ</th></tr>');
-        }
-
-        const tbody = $('#settingsTable tbody');
-        tbody.empty();
+        const tbody = $('#settingsTable tbody'); tbody.empty();
         const items = globalSettings[category] || [];
         items.forEach(item => addSettingRow(item.label, item.value));
+    }
+
+    function getCategoryTitle(cat) {
+        const titles = { sheet: 'สมุดทะเบียน', secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
+        return titles[cat] || cat;
     }
 
     function addSettingRow(label = '', value = '') {
@@ -297,7 +275,6 @@
                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
             </tr>`;
         } else {
-            // หมวดอื่นๆ มีช่องเดียว
             tr = `<tr>
                 <td><input type="text" class="form-control form-control-sm set-single-value" value="${value}" placeholder="ใส่ข้อมูล"></td>
                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
@@ -307,28 +284,21 @@
     }
 
     function saveAllSettings() {
-        captureCurrentTableData(); // จำค่าหน้าปัจจุบันก่อนกด Save
-        
+        captureCurrentTableData();
         let flatSettings = [];
         Object.keys(globalSettings).forEach(cat => {
-            globalSettings[cat].forEach(item => {
-                flatSettings.push([cat, item.label, item.value]);
-            });
+            globalSettings[cat].forEach(item => flatSettings.push([cat, item.label, item.value]));
         });
-
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
         fetch('/api/save-settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ settings: flatSettings })
-        })
-        .then(res => res.json())
-        .then(data => {
+        }).then(res => res.json()).then(data => {
             Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success').then(() => location.reload());
         });
     }
 
-    // --- DataTables & Forms ---
+    // --- Table & Form ---
     function loadTableData(sheetName) {
         if ($.fn.DataTable.isDataTable('#docTable')) { $('#docTable').DataTable().destroy(); }
         table = $('#docTable').DataTable({
@@ -368,12 +338,16 @@
             $('#formAction').val('add');
             $('#editAlert').addClass('d-none');
             const cur = $('#viewSheetSelector').val();
-            // ตรวจสอบว่าเลือกสมุดหรือยัง
-            if(!cur || cur === 'All' && $('#formSheetName option').length === 0) {
-                 Swal.fire('แจ้งเตือน', 'กรุณาตั้งค่ารายชื่อสมุดทะเบียนก่อน (ที่ปุ่มเฟือง)', 'warning');
-                 return;
+            if(!cur || cur === 'All') {
+                if($('#formSheetName option').length > 0) {
+                     $('#formSheetName').val($('#formSheetName option:first').val());
+                } else {
+                     Swal.fire('แจ้งเตือน', 'กรุณาตั้งค่ารายชื่อสมุดทะเบียนก่อน (ที่ปุ่มเฟือง)', 'warning');
+                     return;
+                }
+            } else {
+                $('#formSheetName').val(cur);
             }
-            if(cur && cur !== 'All') $('#formSheetName').val(cur);
             $('input[name="date"]').val(new Date().toISOString().split('T')[0]);
 
         } else if (mode === 'edit') {
@@ -391,7 +365,7 @@
             $('#formDept').val(data['ฝ่าย']);
             $('#formWorker').val(data['ผู้ปฏิบัติ']);
             $('#formMethod').val(data['วิธีการรับเอกสาร']);
-
+            
             $('input[name="regNo"]').val(data['เลขทะเบียนลงรับ']);
             $('input[name="bookNo"]').val(data['เลขที่หนังสือ']);
             $('input[name="subject"]').val(data['ชื่อเรื่อง']);
@@ -420,12 +394,13 @@
         });
     }
 
-    // --- Bulk Import ---
+    // --- Import ---
     function openImportModal() {
         $('#excelPasteArea').val('');
         $('#previewTable tbody').empty();
         $('#btnConfirmImport').prop('disabled',true);
         const dd = $('#importSheetName'); dd.empty();
+        // ก็อปตัวเลือกสมุดมาใส่ ยกเว้น "ทั้งหมด"
         $('#viewSheetSelector option').each(function(){ if($(this).val()!=='All' && $(this).val()) dd.append($(this).clone()); });
         new bootstrap.Modal(document.getElementById('importModal')).show();
     }
