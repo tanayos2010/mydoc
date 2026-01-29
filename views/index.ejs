@@ -13,15 +13,8 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; font-size: 14px;}
         .container-fluid { padding: 20px; max-width: 100%; }
-        
-        /* สไตล์ลิงก์เลขทะเบียน */
         a.doc-link { color: #0d6efd; text-decoration: none; font-weight: bold; }
         a.doc-link:hover { text-decoration: underline; color: #0a58ca; }
-        
-        /* สไตล์ปุ่มแก้ไข */
-        .btn-edit { padding: 2px 8px; font-size: 12px; }
-        
-        /* จัดตำแหน่ง Header */
         .header-controls { display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
@@ -31,17 +24,14 @@
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="mb-0 text-primary"><i class="fas fa-book"></i> ระบบทะเบียนรับหนังสือ</h5>
-            
             <div class="header-controls">
-                <label>เลือกสมุด:</label>
+                <label>สมุด:</label>
                 <select id="viewSheetSelector" class="form-select form-select-sm w-auto" style="min-width: 150px;">
                     <option value="" disabled selected>กำลังโหลด...</option>
                 </select>
-
                 <button class="btn btn-secondary btn-sm" onclick="openSettingsModal()" title="ตั้งค่าตัวเลือก">
                     <i class="fas fa-cog"></i>
                 </button>
-
                 <button class="btn btn-primary btn-sm ms-2" onclick="openModal('add')">
                     <i class="fas fa-plus"></i> ลงรับหนังสือ
                 </button>
@@ -53,16 +43,16 @@
                 <thead class="table-light">
                     <tr>
                         <th style="width: 50px;" class="text-center">แก้ไข</th>
+                        <th>สมุด</th>
                         <th>เลขทะเบียน</th>
                         <th>ลงวันที่</th>
-                        <th>เลขที่หนังสือ</th>
                         <th>เรื่อง</th>
                         <th>จาก</th>
                         <th>ถึง</th>
                         <th>ฝ่าย</th>
                         <th>ชั้นความลับ</th>
                         <th>ชั้นความเร็ว</th>
-                        <th>หมายเหตุ</th>
+                        <th>ผู้ปฏิบัติ</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -83,25 +73,22 @@
                     <input type="hidden" name="action" id="formAction" value="add">
                     <input type="hidden" name="rowIndex" id="formRowIndex">
                     <input type="hidden" name="oldFileUrl" id="formOldFileUrl">
-
-                    <div class="alert alert-warning d-none py-2 mb-3" id="editAlert">
-                        <small><i class="fas fa-info-circle"></i> กำลังแก้ไขข้อมูล (หากไม่เลือกไฟล์ใหม่ ระบบจะใช้ไฟล์เดิม)</small>
-                    </div>
+                    <div class="alert alert-warning d-none py-2 mb-3" id="editAlert"><small>กำลังแก้ไขข้อมูล</small></div>
 
                     <div class="row g-2">
                         <div class="col-12 mb-2">
                             <label class="fw-bold">บันทึกลงสมุดทะเบียน</label>
-                            <select name="sheetName" id="formSheetName" class="form-select bg-light">
-                                </select>
+                            <select name="sheetName" id="formSheetName" class="form-select bg-light"></select>
                         </div>
 
                         <div class="col-md-3"><label>เลขทะเบียนรับ</label><input type="text" name="regNo" class="form-control" required></div>
                         <div class="col-md-3"><label>ลงวันที่</label><input type="date" name="date" class="form-control"></div>
+                        
                         <div class="col-md-3"><label>ชั้นความลับ</label>
-                             <select name="secretLevel" class="form-select"><option value="ปกติ">ปกติ</option><option value="ลับ">ลับ</option></select>
+                             <select name="secretLevel" id="formSecret" class="form-select"></select>
                         </div>
                         <div class="col-md-3"><label>ชั้นความเร็ว</label>
-                             <select name="speedLevel" class="form-select"><option value="ปกติ">ปกติ</option><option value="ด่วน">ด่วน</option></select>
+                             <select name="speedLevel" id="formSpeed" class="form-select"></select>
                         </div>
                         
                         <div class="col-md-4"><label>เลขที่หนังสือ</label><input type="text" name="bookNo" class="form-control"></div>
@@ -110,9 +97,16 @@
                         
                         <div class="col-12"><label>ชื่อเรื่อง</label><input type="text" name="subject" class="form-control" required></div>
                         
-                        <div class="col-md-6"><label>ฝ่ายเจ้าของเรื่อง</label><input type="text" name="dept" class="form-control"></div>
-                        <div class="col-md-6"><label>ผู้ปฏิบัติ</label><input type="text" name="worker" class="form-control"></div>
-                        <div class="col-md-6"><label>วิธีรับ</label><input type="text" name="method" class="form-control"></div>
+                        <div class="col-md-6"><label>ฝ่ายเจ้าของเรื่อง</label>
+                             <select name="dept" id="formDept" class="form-select"></select>
+                        </div>
+                        <div class="col-md-6"><label>ผู้ปฏิบัติ</label>
+                             <select name="worker" id="formWorker" class="form-select"></select>
+                        </div>
+                        <div class="col-md-6"><label>วิธีรับ</label>
+                             <select name="method" id="formMethod" class="form-select"></select>
+                        </div>
+                        
                         <div class="col-md-6"><label>หมายเหตุ</label><input type="text" name="remark" class="form-control"></div>
 
                         <div class="col-12 mt-3 p-3 bg-light border rounded">
@@ -132,29 +126,41 @@
 </div>
 
 <div class="modal fade" id="settingsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+    <div class="modal-dialog modal-lg"> <div class="modal-content">
             <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title"><i class="fas fa-cog"></i> ตั้งค่าตัวเลือกสมุดทะเบียน</h5>
+                <h5 class="modal-title"><i class="fas fa-cogs"></i> จัดการตัวเลือก (Dropdown)</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info py-2"><small>เพิ่มรายชื่อ Sheet ที่ต้องการให้แสดงในตัวเลือก</small></div>
-                <table class="table table-bordered table-sm" id="settingsTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ชื่อที่แสดง (เช่น ปี 67)</th>
-                            <th>ชื่อ Sheet (เช่น Sheet2567)</th>
-                            <th style="width:50px" class="text-center">ลบ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        </tbody>
-                </table>
-                <button class="btn btn-sm btn-success w-100" onclick="addSettingRow()">+ เพิ่มแถวใหม่</button>
+                <div class="row">
+                    <div class="col-md-3 border-end">
+                        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist">
+                            <button class="nav-link active" onclick="renderSettingTable('sheet')">สมุดทะเบียน</button>
+                            <button class="nav-link" onclick="renderSettingTable('secret')">ชั้นความลับ</button>
+                            <button class="nav-link" onclick="renderSettingTable('speed')">ชั้นความเร็ว</button>
+                            <button class="nav-link" onclick="renderSettingTable('dept')">ฝ่าย/แผนก</button>
+                            <button class="nav-link" onclick="renderSettingTable('worker')">ผู้ปฏิบัติ</button>
+                            <button class="nav-link" onclick="renderSettingTable('method')">วิธีรับ</button>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <h6 id="settingCategoryTitle" class="fw-bold text-primary mb-3">สมุดทะเบียน</h6>
+                        <table class="table table-bordered table-sm" id="settingsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ชื่อที่แสดง (Label)</th>
+                                    <th>ค่าที่บันทึก (Value)</th>
+                                    <th style="width:50px">ลบ</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                        <button class="btn btn-sm btn-success w-100" onclick="addSettingRow()">+ เพิ่มรายการใหม่</button>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="saveSettings()">บันทึกการตั้งค่า</button>
+                <button type="button" class="btn btn-primary" onclick="saveAllSettings()">บันทึกการตั้งค่าทั้งหมด</button>
             </div>
         </div>
     </div>
@@ -168,91 +174,128 @@
 
 <script>
     let table;
-    let allData = []; // เก็บข้อมูลเพื่อใช้ตอนกด Edit
+    let allData = [];
+    // ตัวแปรเก็บ Settings ทั้งหมดไว้ในความจำ
+    let globalSettings = {
+        sheet: [], secret: [], speed: [], dept: [], worker: [], method: []
+    };
+    let currentCategoryEdit = 'sheet'; // จำว่ากำลังแก้หมวดไหนอยู่
 
     $(document).ready(function() {
-        // 1. โหลด Settings (ชื่อ Sheet) ก่อนเป็นอันดับแรก
-        loadSettings().then(() => {
-            // 2. พอโหลดชื่อ Sheet เสร็จ ค่อยโหลดตารางข้อมูลของ Sheet แรกสุด
+        // 1. โหลด Settings ทั้งหมด
+        loadGlobalSettings().then(() => {
+            // 2. โหลดตารางข้อมูล
             const initialSheet = $('#viewSheetSelector').val();
-            if(initialSheet) {
-                loadTableData(initialSheet);
-            }
+            if(initialSheet) loadTableData(initialSheet);
         });
 
-        // Event: เมื่อเปลี่ยน Dropdown หน้าหลัก -> ให้โหลดตารางใหม่
-        $('#viewSheetSelector').on('change', function() { 
-            loadTableData($(this).val()); 
-        });
+        $('#viewSheetSelector').on('change', function() { loadTableData($(this).val()); });
     });
 
-    // --- ฟังก์ชัน 1: จัดการ Settings (Dropdown) ---
-    async function loadSettings() {
+    // --- ส่วนจัดการ Settings ---
+    async function loadGlobalSettings() {
         try {
             const response = await fetch('/api/settings');
-            const settings = await response.json();
+            const data = await response.json(); // { sheet:[], secret:[], ... }
             
-            const dropdown1 = $('#viewSheetSelector'); // หน้าหลัก
-            const dropdown2 = $('#formSheetName');     // ในฟอร์ม Modal
-            
-            dropdown1.empty();
-            dropdown2.empty();
-
-            if (!settings || settings.length === 0) {
-                // กรณีไม่เคยตั้งค่ามาก่อน ให้ใส่ค่า Default
-                const def = '<option value="Sheet1">สมุดทะเบียนหลัก</option>';
-                dropdown1.append(def);
-                dropdown2.append(def);
+            // ถ้ามีข้อมูลให้ update ตัวแปร global, ถ้าไม่มีให้ใช้ค่า default ว่างๆ
+            if(data && Object.keys(data).length > 0) {
+                globalSettings = data;
             } else {
-                settings.forEach(item => {
-                    const opt = `<option value="${item.value}">${item.label}</option>`;
-                    dropdown1.append(opt);
-                    dropdown2.append(opt);
-                });
+                // Default เริ่มต้นถ้าเพิ่งสร้างครั้งแรก
+                globalSettings = {
+                   sheet: [{label: 'สมุดทะเบียนหลัก', value: 'Sheet1'}],
+                   secret: [{label: 'ปกติ', value: 'ปกติ'}, {label: 'ลับ', value: 'ลับ'}],
+                   speed: [{label: 'ปกติ', value: 'ปกติ'}, {label: 'ด่วน', value: 'ด่วน'}],
+                   dept: [{label: 'ธุรการ', value: 'ธุรการ'}],
+                   worker: [{label: '-', value: '-'}],
+                   method: [{label: 'Email', value: 'Email'}]
+                };
             }
-        } catch (err) {
-            console.error("Load settings error:", err);
-            // Fallback กรณี Error
-            const def = '<option value="Sheet1">สมุดทะเบียนหลัก</option>';
-            $('#viewSheetSelector').append(def);
-            $('#formSheetName').append(def);
+
+            // Populate Dropdowns หน้าเว็บ
+            populateDropdown('#viewSheetSelector', globalSettings.sheet, true); // มี "ทั้งหมด"
+            populateDropdown('#formSheetName', globalSettings.sheet);
+            populateDropdown('#formSecret', globalSettings.secret);
+            populateDropdown('#formSpeed', globalSettings.speed);
+            populateDropdown('#formDept', globalSettings.dept);
+            populateDropdown('#formWorker', globalSettings.worker);
+            populateDropdown('#formMethod', globalSettings.method);
+
+        } catch (err) { console.error(err); }
+    }
+
+    function populateDropdown(selector, items, includeAll = false) {
+        const dropdown = $(selector);
+        dropdown.empty();
+        if(includeAll) dropdown.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
+        
+        if (items && items.length > 0) {
+            items.forEach(item => {
+                dropdown.append(`<option value="${item.value}">${item.label}</option>`);
+            });
         }
     }
 
+    // เปิด Modal Settings
     function openSettingsModal() {
         const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+        renderSettingTable('sheet'); // เปิดมาเจอหมวด sheet ก่อน
+        modal.show();
+    }
+
+    // เรนเดอร์ตารางตั้งค่า ตามหมวดที่เลือก
+    function renderSettingTable(category) {
+        currentCategoryEdit = category;
+        
+        // Update Active Tab UI
+        $('.nav-link').removeClass('active');
+        $(`.nav-link[onclick="renderSettingTable('${category}')"]`).addClass('active');
+
+        // Update Title
+        const titles = { sheet: 'สมุดทะเบียน', secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
+        $('#settingCategoryTitle').text(titles[category]);
+
+        // Render Rows
         const tbody = $('#settingsTable tbody');
         tbody.empty();
-
-        // ดึงค่าปัจจุบันจาก Dropdown มาใส่ในตารางแก้ไข
-        $('#viewSheetSelector option').each(function() {
-            const label = $(this).text();
-            const value = $(this).val();
-            addSettingRow(label, value);
+        
+        // ดึงค่าจาก globalSettings มาโชว์
+        const items = globalSettings[category] || [];
+        items.forEach(item => {
+            addSettingRow(item.label, item.value);
         });
-
-        modal.show();
     }
 
     function addSettingRow(label = '', value = '') {
         const tr = `
             <tr>
-                <td><input type="text" class="form-control form-control-sm set-label" value="${label}" placeholder="ชื่อโชว์"></td>
-                <td><input type="text" class="form-control form-control-sm set-value" value="${value}" placeholder="ชื่อ Sheet"></td>
+                <td><input type="text" class="form-control form-control-sm set-label" value="${label}"></td>
+                <td><input type="text" class="form-control form-control-sm set-value" value="${value}"></td>
                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
             </tr>
         `;
         $('#settingsTable tbody').append(tr);
     }
 
-    function saveSettings() {
-        const newSettings = [];
+    // บันทึก Settings กลับไป Server
+    function saveAllSettings() {
+        // 1. เซฟค่าจากตารางปัจจุบัน ลงตัวแปร global ก่อน (เพราะตารางโชว์แค่หมวดเดียว)
+        const currentItems = [];
         $('#settingsTable tbody tr').each(function() {
-            const label = $(this).find('.set-label').val().trim();
-            const value = $(this).find('.set-value').val().trim();
-            if(label && value) {
-                newSettings.push([label, value]);
-            }
+            const l = $(this).find('.set-label').val().trim();
+            const v = $(this).find('.set-value').val().trim();
+            if(l && v) currentItems.push({label: l, value: v});
+        });
+        globalSettings[currentCategoryEdit] = currentItems;
+
+        // 2. แปลง globalSettings เป็น Array แบบ Flat เพื่อส่งให้ Google Sheet
+        // Format: [[category, label, value], ...]
+        let flatSettings = [];
+        Object.keys(globalSettings).forEach(cat => {
+            globalSettings[cat].forEach(item => {
+                flatSettings.push([cat, item.label, item.value]);
+            });
         });
 
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
@@ -260,121 +303,110 @@
         fetch('/api/save-settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ settings: newSettings })
+            body: JSON.stringify({ settings: flatSettings })
         })
         .then(res => res.json())
         .then(data => {
             Swal.fire('สำเร็จ', 'บันทึกการตั้งค่าแล้ว', 'success').then(() => {
-                location.reload(); // รีโหลดหน้าเว็บใหม่
+                location.reload();
             });
-        })
-        .catch(err => Swal.fire('Error', 'ไม่สามารถบันทึกได้', 'error'));
+        });
     }
 
-    // --- ฟังก์ชัน 2: จัดการตารางข้อมูล (DataTables) ---
+    // --- ส่วน DataTables & Forms (เหมือนเดิม แต่เพิ่มคอลัมน์สมุด) ---
     function loadTableData(sheetName) {
         if ($.fn.DataTable.isDataTable('#docTable')) { $('#docTable').DataTable().destroy(); }
 
         table = $('#docTable').DataTable({
             "ajax": {
                 "url": "/api/data?sheet=" + encodeURIComponent(sheetName),
-                "dataSrc": function(json) {
-                    allData = json; // เก็บข้อมูลดิบไว้ใช้ตอน Edit
-                    return json;
-                }
+                "dataSrc": function(json) { allData = json; return json; }
             },
             "columns": [
                 { 
-                    "data": null,
-                    "className": "text-center",
+                    "data": null, "className": "text-center",
                     "render": function(data, type, row, meta) {
-                        // ปุ่มแก้ไข
                         return `<button class="btn btn-warning btn-edit text-white" onclick="openModal('edit', ${meta.row})"><i class="fas fa-pen"></i></button>`;
                     }
                 },
                 { 
+                    "data": "sheetName", "visible": sheetName === 'All',
+                    "render": function(data) { return `<span class="badge bg-secondary">${data}</span>`; }
+                },
+                { 
                     "data": "เลขทะเบียนลงรับ",
                     "render": function(data, type, row) {
-                        // สร้างลิงก์ถ้ามีข้อมูลใน 'ลิงก์ไฟล์แนบ'
                         const link = row['ลิงก์ไฟล์แนบ'];
-                        if (link && link.includes('http')) {
-                            return `<a href="${link}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${data}</a>`;
-                        }
+                        if (link && link.includes('http')) return `<a href="${link}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${data}</a>`;
                         return data || '-';
                     }
                 },
-                { "data": "ลงวันที่", "defaultContent": "-" }, // แสดงวันที่ดิบๆ ตามที่ส่งมาจาก Sheet
-                { "data": "เลขที่หนังสือ", "defaultContent": "" },
+                { "data": "ลงวันที่", "defaultContent": "-" },
                 { "data": "ชื่อเรื่อง", "defaultContent": "" },
                 { "data": "จาก", "defaultContent": "" },
                 { "data": "ถึง", "defaultContent": "" },
                 { "data": "ฝ่าย", "defaultContent": "" },
                 { "data": "ชั้นความลับ", "defaultContent": "" },
                 { "data": "ชั้นความเร็ว", "defaultContent": "" },
-                { "data": "หมายเหตุ", "defaultContent": "" }
+                { "data": "ผู้ปฏิบัติ", "defaultContent": "" }
             ],
-            "order": [[ 1, "desc" ]], // เรียงเลขทะเบียน (Col index 1) จากมากไปน้อย
+            "order": [[ 2, "desc" ]], // เรียงเลขทะเบียน
             "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" }
         });
     }
 
-    // --- ฟังก์ชัน 3: จัดการฟอร์มบันทึก (Add/Edit) ---
     function openModal(mode, tableRowIndex = null) {
         const modal = new bootstrap.Modal(document.getElementById('dataModal'));
         const form = document.getElementById('docForm');
-        
         form.reset();
         $('#currentFileLink').html('');
         
-        // ซิงค์ Dropdown ในฟอร์ม ให้ตรงกับที่เลือกอยู่หน้าหลัก
-        const currentSheet = $('#viewSheetSelector').val();
-        if(currentSheet) $('#formSheetName').val(currentSheet);
-
+        // ถ้าเพิ่มใหม่ ให้ Dropdown เลือกค่าแรกสุดเป็น Default
         if (mode === 'add') {
             $('#modalTitle').text('ลงรับหนังสือใหม่');
             $('#formAction').val('add');
             $('#editAlert').addClass('d-none');
-            // วันที่ default วันปัจจุบัน
-            const today = new Date().toISOString().split('T')[0];
-            $('input[name="date"]').val(today);
+            // ซิงค์ Sheet
+            const curSheet = $('#viewSheetSelector').val();
+            if(curSheet && curSheet !== 'All') $('#formSheetName').val(curSheet);
+            
+            $('input[name="date"]').val(new Date().toISOString().split('T')[0]);
 
         } else if (mode === 'edit') {
-            const data = allData[tableRowIndex]; // ดึงข้อมูลจากตัวแปร global
-            
+            const data = allData[tableRowIndex];
             $('#modalTitle').text('แก้ไขข้อมูล');
             $('#formAction').val('edit');
             $('#formRowIndex').val(data.rowIndex);
             $('#formOldFileUrl').val(data['ลิงก์ไฟล์แนบ']);
             $('#editAlert').removeClass('d-none');
 
-            // เติมข้อมูลลงฟอร์ม
+            // Set Dropdowns
+            if(data.sheetName) $('#formSheetName').val(data.sheetName);
+            $('#formSecret').val(data['ชั้นความลับ']);
+            $('#formSpeed').val(data['ชั้นความเร็ว']);
+            $('#formDept').val(data['ฝ่าย']);
+            $('#formWorker').val(data['ผู้ปฏิบัติ']);
+            $('#formMethod').val(data['วิธีการรับเอกสาร']);
+
+            // Set Inputs
             $('input[name="regNo"]').val(data['เลขทะเบียนลงรับ']);
             $('input[name="bookNo"]').val(data['เลขที่หนังสือ']);
             $('input[name="subject"]').val(data['ชื่อเรื่อง']);
             $('input[name="from"]').val(data['จาก']);
             $('input[name="to"]').val(data['ถึง']);
-            $('input[name="dept"]').val(data['ฝ่าย']);
-            $('input[name="worker"]').val(data['ผู้ปฏิบัติ']);
-            $('input[name="method"]').val(data['วิธีการรับเอกสาร']);
             $('input[name="remark"]').val(data['หมายเหตุ']);
-            $('select[name="secretLevel"]').val(data['ชั้นความลับ']);
-            $('select[name="speedLevel"]').val(data['ชั้นความเร็ว']);
-            
-            // แปลงวันที่ Text (เช่น 25/12/2567) เป็น YYYY-MM-DD เพื่อใส่ input date
+
             if(data['ลงวันที่']) {
-                let dStr = data['ลงวันที่'];
-                if (dStr.includes('/')) {
-                    const parts = dStr.split('/');
-                    if (parts.length === 3) {
-                        // สมมติใน sheet เป็น วัน/เดือน/ปี -> แปลงเป็น ปี-เดือน-วัน
-                        dStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                    }
+                let d = data['ลงวันที่'];
+                if(d.includes('/')) {
+                   const p = d.split('/');
+                   if(p.length===3) d = `${p[2]}-${p[1]}-${p[0]}`;
                 }
-                $('input[name="date"]').val(dStr);
+                $('input[name="date"]').val(d);
             }
 
             if(data['ลิงก์ไฟล์แนบ']) {
-                $('#currentFileLink').html(`<i class="fas fa-check-circle text-success"></i> มีไฟล์เดิมอยู่แล้ว: <a href="${data['ลิงก์ไฟล์แนบ']}" target="_blank">เปิดดู</a>`);
+                $('#currentFileLink').html(`<i class="fas fa-check-circle text-success"></i> มีไฟล์เดิม: <a href="${data['ลิงก์ไฟล์แนบ']}" target="_blank">เปิดดู</a>`);
             }
         }
         modal.show();
@@ -383,20 +415,16 @@
     function submitForm() {
         const form = document.getElementById('docForm');
         const formData = new FormData(form);
-
         Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
         fetch('/submit', { method: 'POST', body: formData })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
             if(data.status === 'success') {
                 Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success').then(() => {
                     bootstrap.Modal.getInstance(document.getElementById('dataModal')).hide();
-                    loadTableData($('#formSheetName').val()); // รีโหลดตาราง
+                    loadTableData($('#formSheetName').val());
                 });
-            } else {
-                Swal.fire('Error', data.message, 'error');
-            }
+            } else { Swal.fire('Error', data.message, 'error'); }
         })
         .catch(err => Swal.fire('Error', 'เชื่อมต่อ Server ไม่ได้', 'error'));
     }
