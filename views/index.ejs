@@ -35,6 +35,9 @@
                 <button class="btn btn-primary btn-sm ms-2" onclick="openModal('add')">
                     <i class="fas fa-plus"></i> ลงรับหนังสือ
                 </button>
+                <button class="btn btn-success btn-sm ms-2" onclick="openImportModal()">
+                    <i class="fas fa-file-excel"></i> นำเข้า Excel
+                </button>
             </div>
         </div>
         
@@ -125,31 +128,60 @@
     </div>
 </div>
 
-<div class="modal fade" id="settingsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg"> <div class="modal-content">
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">นำเข้าข้อมูลจาก Excel</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 small">
+                    <strong>วิธีใช้งาน:</strong> เรียงคอลัมน์ใน Excel: <strong>เลขทะเบียน | ความลับ | ความเร็ว | เลขที่หนังสือ | วันที่ | จาก | ถึง | เรื่อง | ฝ่าย | ผู้ปฏิบัติ | วิธีรับ | หมายเหตุ</strong> แล้ว Copy มาวาง
+                </div>
+                <textarea id="excelPasteArea" class="form-control mb-2" rows="5" placeholder="วางข้อมูลที่นี่..."></textarea>
+                <select id="importSheetName" class="form-select w-auto mb-2"></select>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm small" id="previewTable">
+                        <thead class="table-light"><tr><th>ทะเบียน</th><th>ลับ</th><th>เร็ว</th><th>เลขที่</th><th>วันที่</th><th>จาก</th><th>ถึง</th><th>เรื่อง</th><th>ฝ่าย</th><th>ผู้ปฏิบัติ</th><th>วิธี</th><th>หมายเหตุ</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span class="me-auto" id="previewCount">0 รายการ</span>
+                <button type="button" class="btn btn-success" onclick="submitBulkData()" id="btnConfirmImport" disabled>ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
             <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title"><i class="fas fa-cogs"></i> จัดการตัวเลือก (Dropdown)</h5>
+                <h5 class="modal-title"><i class="fas fa-cogs"></i> จัดการตัวเลือก</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-3 border-end">
-                        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist">
-                            <button class="nav-link active" onclick="renderSettingTable('sheet')">สมุดทะเบียน</button>
-                            <button class="nav-link" onclick="renderSettingTable('secret')">ชั้นความลับ</button>
-                            <button class="nav-link" onclick="renderSettingTable('speed')">ชั้นความเร็ว</button>
-                            <button class="nav-link" onclick="renderSettingTable('dept')">ฝ่าย/แผนก</button>
-                            <button class="nav-link" onclick="renderSettingTable('worker')">ผู้ปฏิบัติ</button>
-                            <button class="nav-link" onclick="renderSettingTable('method')">วิธีรับ</button>
+                        <div class="nav flex-column nav-pills" id="v-pills-tab">
+                            <button class="nav-link active" onclick="switchCategory('sheet')">สมุดทะเบียน</button>
+                            <button class="nav-link" onclick="switchCategory('secret')">ชั้นความลับ</button>
+                            <button class="nav-link" onclick="switchCategory('speed')">ชั้นความเร็ว</button>
+                            <button class="nav-link" onclick="switchCategory('dept')">ฝ่าย/แผนก</button>
+                            <button class="nav-link" onclick="switchCategory('worker')">ผู้ปฏิบัติ</button>
+                            <button class="nav-link" onclick="switchCategory('method')">วิธีรับ</button>
                         </div>
                     </div>
                     <div class="col-md-9">
                         <h6 id="settingCategoryTitle" class="fw-bold text-primary mb-3">สมุดทะเบียน</h6>
                         <table class="table table-bordered table-sm" id="settingsTable">
                             <thead class="table-light">
-                                <tr>
+                                <tr id="settingTableHeader">
                                     <th>ชื่อที่แสดง (Label)</th>
-                                    <th>ค่าที่บันทึก (Value)</th>
+                                    <th>ชื่อ Sheet (Value)</th>
                                     <th style="width:50px">ลบ</th>
                                 </tr>
                             </thead>
@@ -175,52 +207,34 @@
 <script>
     let table;
     let allData = [];
-    // ตัวแปรเก็บ Settings ทั้งหมดไว้ในความจำ
-    let globalSettings = {
-        sheet: [], secret: [], speed: [], dept: [], worker: [], method: []
-    };
-    let currentCategoryEdit = 'sheet'; // จำว่ากำลังแก้หมวดไหนอยู่
+    let bulkData = [];
+    let globalSettings = { sheet: [], secret: [], speed: [], dept: [], worker: [], method: [] };
+    let currentCategoryEdit = 'sheet';
 
     $(document).ready(function() {
-        // 1. โหลด Settings ทั้งหมด
         loadGlobalSettings().then(() => {
-            // 2. โหลดตารางข้อมูล
             const initialSheet = $('#viewSheetSelector').val();
             if(initialSheet) loadTableData(initialSheet);
         });
-
         $('#viewSheetSelector').on('change', function() { loadTableData($(this).val()); });
+        $('#excelPasteArea').on('input', function() { parseExcelData($(this).val()); });
     });
 
-    // --- ส่วนจัดการ Settings ---
+    // --- Settings Logic ---
     async function loadGlobalSettings() {
         try {
             const response = await fetch('/api/settings');
-            const data = await response.json(); // { sheet:[], secret:[], ... }
+            const data = await response.json();
+            if(data && Object.keys(data).length > 0) globalSettings = data;
             
-            // ถ้ามีข้อมูลให้ update ตัวแปร global, ถ้าไม่มีให้ใช้ค่า default ว่างๆ
-            if(data && Object.keys(data).length > 0) {
-                globalSettings = data;
-            } else {
-                // Default เริ่มต้นถ้าเพิ่งสร้างครั้งแรก
-                globalSettings = {
-                   sheet: [{label: 'สมุดทะเบียนหลัก', value: 'Sheet1'}],
-                   secret: [{label: 'ปกติ', value: 'ปกติ'}, {label: 'ลับ', value: 'ลับ'}],
-                   speed: [{label: 'ปกติ', value: 'ปกติ'}, {label: 'ด่วน', value: 'ด่วน'}],
-                   dept: [{label: 'ธุรการ', value: 'ธุรการ'}],
-                   worker: [{label: '-', value: '-'}],
-                   method: [{label: 'Email', value: 'Email'}]
-                };
-            }
-
-            // Populate Dropdowns หน้าเว็บ
-            populateDropdown('#viewSheetSelector', globalSettings.sheet, true); // มี "ทั้งหมด"
+            populateDropdown('#viewSheetSelector', globalSettings.sheet, true);
             populateDropdown('#formSheetName', globalSettings.sheet);
             populateDropdown('#formSecret', globalSettings.secret);
             populateDropdown('#formSpeed', globalSettings.speed);
             populateDropdown('#formDept', globalSettings.dept);
             populateDropdown('#formWorker', globalSettings.worker);
             populateDropdown('#formMethod', globalSettings.method);
+            populateDropdown('#importSheetName', globalSettings.sheet);
 
         } catch (err) { console.error(err); }
     }
@@ -229,38 +243,60 @@
         const dropdown = $(selector);
         dropdown.empty();
         if(includeAll) dropdown.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
-        
-        if (items && items.length > 0) {
-            items.forEach(item => {
-                dropdown.append(`<option value="${item.value}">${item.label}</option>`);
-            });
-        }
+        if (items) items.forEach(item => dropdown.append(`<option value="${item.value}">${item.label}</option>`));
     }
 
-    // เปิด Modal Settings
     function openSettingsModal() {
-        const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
-        renderSettingTable('sheet'); // เปิดมาเจอหมวด sheet ก่อน
-        modal.show();
+        // รีเซ็ตค่าให้เริ่มที่หมวด sheet เสมอ
+        currentCategoryEdit = 'sheet';
+        renderSettingTable('sheet');
+        new bootstrap.Modal(document.getElementById('settingsModal')).show();
     }
 
-    // เรนเดอร์ตารางตั้งค่า ตามหมวดที่เลือก
+    // ฟังก์ชันสลับหมวดหมู่ (สำคัญ: ต้องจำค่าเก่าก่อนเปลี่ยนหน้า)
+    function switchCategory(newCategory) {
+        captureCurrentTableData(); // จำค่าปัจจุบันลง memory ก่อน
+        renderSettingTable(newCategory); // แล้วค่อยเรนเดอร์หน้าใหม่
+    }
+
+    function captureCurrentTableData() {
+        const currentItems = [];
+        $('#settingsTable tbody tr').each(function() {
+            // ถ้าเป็นหมวด Sheet จะมี 2 ช่อง, หมวดอื่นมี 1 ช่อง
+            if (currentCategoryEdit === 'sheet') {
+                const l = $(this).find('.set-label').val().trim();
+                const v = $(this).find('.set-value').val().trim();
+                if(l && v) currentItems.push({label: l, value: v});
+            } else {
+                const v = $(this).find('.set-single-value').val().trim();
+                if(v) currentItems.push({label: v, value: v}); // ใช้ค่าเดียวกันทั้ง Label และ Value
+            }
+        });
+        globalSettings[currentCategoryEdit] = currentItems;
+    }
+
     function renderSettingTable(category) {
         currentCategoryEdit = category;
         
-        // Update Active Tab UI
         $('.nav-link').removeClass('active');
-        $(`.nav-link[onclick="renderSettingTable('${category}')"]`).addClass('active');
+        $(`.nav-link[onclick="switchCategory('${category}')"]`).addClass('active');
 
-        // Update Title
         const titles = { sheet: 'สมุดทะเบียน', secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
         $('#settingCategoryTitle').text(titles[category]);
 
-        // Render Rows
+        const thead = $('#settingsTable thead tr');
+        thead.empty();
+        
+        // **ปรับ UI ตามหมวดหมู่**
+        if (category === 'sheet') {
+            thead.append('<th>ชื่อที่แสดง (เช่น ปี 67)</th><th>ชื่อ Sheet (เช่น Sheet67)</th><th style="width:50px">ลบ</th>');
+        } else {
+            thead.append('<th>ชื่อข้อมูล (เช่น ด่วนที่สุด, ธุรการ)</th><th style="width:50px">ลบ</th>');
+        }
+
         const tbody = $('#settingsTable tbody');
         tbody.empty();
         
-        // ดึงค่าจาก globalSettings มาโชว์
         const items = globalSettings[category] || [];
         items.forEach(item => {
             addSettingRow(item.label, item.value);
@@ -268,29 +304,26 @@
     }
 
     function addSettingRow(label = '', value = '') {
-        const tr = `
-            <tr>
-                <td><input type="text" class="form-control form-control-sm set-label" value="${label}"></td>
-                <td><input type="text" class="form-control form-control-sm set-value" value="${value}"></td>
+        let tr = '';
+        if (currentCategoryEdit === 'sheet') {
+            tr = `<tr>
+                <td><input type="text" class="form-control form-control-sm set-label" value="${label}" placeholder="ชื่อโชว์"></td>
+                <td><input type="text" class="form-control form-control-sm set-value" value="${value}" placeholder="ชื่อ Sheet"></td>
                 <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
-            </tr>
-        `;
+            </tr>`;
+        } else {
+            // หมวดอื่นๆ มีช่องเดียว (value)
+            tr = `<tr>
+                <td><input type="text" class="form-control form-control-sm set-single-value" value="${value}" placeholder="ใส่ข้อมูล"></td>
+                <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+            </tr>`;
+        }
         $('#settingsTable tbody').append(tr);
     }
 
-    // บันทึก Settings กลับไป Server
     function saveAllSettings() {
-        // 1. เซฟค่าจากตารางปัจจุบัน ลงตัวแปร global ก่อน (เพราะตารางโชว์แค่หมวดเดียว)
-        const currentItems = [];
-        $('#settingsTable tbody tr').each(function() {
-            const l = $(this).find('.set-label').val().trim();
-            const v = $(this).find('.set-value').val().trim();
-            if(l && v) currentItems.push({label: l, value: v});
-        });
-        globalSettings[currentCategoryEdit] = currentItems;
+        captureCurrentTableData(); // จำหน้าปัจจุบันก่อนบันทึก
 
-        // 2. แปลง globalSettings เป็น Array แบบ Flat เพื่อส่งให้ Google Sheet
-        // Format: [[category, label, value], ...]
         let flatSettings = [];
         Object.keys(globalSettings).forEach(cat => {
             globalSettings[cat].forEach(item => {
@@ -307,40 +340,27 @@
         })
         .then(res => res.json())
         .then(data => {
-            Swal.fire('สำเร็จ', 'บันทึกการตั้งค่าแล้ว', 'success').then(() => {
-                location.reload();
-            });
+            Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success').then(() => location.reload());
         });
     }
 
-    // --- ส่วน DataTables & Forms (เหมือนเดิม แต่เพิ่มคอลัมน์สมุด) ---
+    // --- Data Table & Form Logic ---
     function loadTableData(sheetName) {
         if ($.fn.DataTable.isDataTable('#docTable')) { $('#docTable').DataTable().destroy(); }
-
         table = $('#docTable').DataTable({
             "ajax": {
                 "url": "/api/data?sheet=" + encodeURIComponent(sheetName),
                 "dataSrc": function(json) { allData = json; return json; }
             },
             "columns": [
-                { 
-                    "data": null, "className": "text-center",
-                    "render": function(data, type, row, meta) {
+                { "data": null, "className": "text-center", "render": function(data, type, row, meta) {
                         return `<button class="btn btn-warning btn-edit text-white" onclick="openModal('edit', ${meta.row})"><i class="fas fa-pen"></i></button>`;
-                    }
-                },
-                { 
-                    "data": "sheetName", "visible": sheetName === 'All',
-                    "render": function(data) { return `<span class="badge bg-secondary">${data}</span>`; }
-                },
-                { 
-                    "data": "เลขทะเบียนลงรับ",
-                    "render": function(data, type, row) {
-                        const link = row['ลิงก์ไฟล์แนบ'];
-                        if (link && link.includes('http')) return `<a href="${link}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${data}</a>`;
-                        return data || '-';
-                    }
-                },
+                }},
+                { "data": "sheetName", "visible": sheetName === 'All', "render": function(d) { return `<span class="badge bg-secondary">${d}</span>`; } },
+                { "data": "เลขทะเบียนลงรับ", "render": function(d, t, r) {
+                    if (r['ลิงก์ไฟล์แนบ'] && r['ลิงก์ไฟล์แนบ'].includes('http')) return `<a href="${r['ลิงก์ไฟล์แนบ']}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${d}</a>`;
+                    return d || '-';
+                }},
                 { "data": "ลงวันที่", "defaultContent": "-" },
                 { "data": "ชื่อเรื่อง", "defaultContent": "" },
                 { "data": "จาก", "defaultContent": "" },
@@ -350,26 +370,22 @@
                 { "data": "ชั้นความเร็ว", "defaultContent": "" },
                 { "data": "ผู้ปฏิบัติ", "defaultContent": "" }
             ],
-            "order": [[ 2, "desc" ]], // เรียงเลขทะเบียน
+            "order": [[ 2, "desc" ]],
             "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" }
         });
     }
 
     function openModal(mode, tableRowIndex = null) {
         const modal = new bootstrap.Modal(document.getElementById('dataModal'));
-        const form = document.getElementById('docForm');
-        form.reset();
+        document.getElementById('docForm').reset();
         $('#currentFileLink').html('');
         
-        // ถ้าเพิ่มใหม่ ให้ Dropdown เลือกค่าแรกสุดเป็น Default
         if (mode === 'add') {
             $('#modalTitle').text('ลงรับหนังสือใหม่');
             $('#formAction').val('add');
             $('#editAlert').addClass('d-none');
-            // ซิงค์ Sheet
-            const curSheet = $('#viewSheetSelector').val();
-            if(curSheet && curSheet !== 'All') $('#formSheetName').val(curSheet);
-            
+            const cur = $('#viewSheetSelector').val();
+            if(cur && cur !== 'All') $('#formSheetName').val(cur);
             $('input[name="date"]').val(new Date().toISOString().split('T')[0]);
 
         } else if (mode === 'edit') {
@@ -380,7 +396,6 @@
             $('#formOldFileUrl').val(data['ลิงก์ไฟล์แนบ']);
             $('#editAlert').removeClass('d-none');
 
-            // Set Dropdowns
             if(data.sheetName) $('#formSheetName').val(data.sheetName);
             $('#formSecret').val(data['ชั้นความลับ']);
             $('#formSpeed').val(data['ชั้นความเร็ว']);
@@ -388,7 +403,6 @@
             $('#formWorker').val(data['ผู้ปฏิบัติ']);
             $('#formMethod').val(data['วิธีการรับเอกสาร']);
 
-            // Set Inputs
             $('input[name="regNo"]').val(data['เลขทะเบียนลงรับ']);
             $('input[name="bookNo"]').val(data['เลขที่หนังสือ']);
             $('input[name="subject"]').val(data['ชื่อเรื่อง']);
@@ -398,35 +412,69 @@
 
             if(data['ลงวันที่']) {
                 let d = data['ลงวันที่'];
-                if(d.includes('/')) {
-                   const p = d.split('/');
-                   if(p.length===3) d = `${p[2]}-${p[1]}-${p[0]}`;
-                }
+                if(d.includes('/')) { const p=d.split('/'); if(p.length===3) d=`${p[2]}-${p[1]}-${p[0]}`; }
                 $('input[name="date"]').val(d);
             }
-
-            if(data['ลิงก์ไฟล์แนบ']) {
-                $('#currentFileLink').html(`<i class="fas fa-check-circle text-success"></i> มีไฟล์เดิม: <a href="${data['ลิงก์ไฟล์แนบ']}" target="_blank">เปิดดู</a>`);
-            }
+            if(data['ลิงก์ไฟล์แนบ']) $('#currentFileLink').html(`<a href="${data['ลิงก์ไฟล์แนบ']}" target="_blank">เปิดไฟล์เดิม</a>`);
         }
         modal.show();
     }
 
     function submitForm() {
-        const form = document.getElementById('docForm');
-        const formData = new FormData(form);
-        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        fetch('/submit', { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') {
-                Swal.fire('สำเร็จ', 'บันทึกเรียบร้อย', 'success').then(() => {
-                    bootstrap.Modal.getInstance(document.getElementById('dataModal')).hide();
-                    loadTableData($('#formSheetName').val());
+        const formData = new FormData(document.getElementById('docForm'));
+        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+        fetch('/submit', { method: 'POST', body: formData }).then(r=>r.json()).then(d=>{
+            if(d.status==='success') Swal.fire('สำเร็จ','','success').then(()=>{
+                bootstrap.Modal.getInstance(document.getElementById('dataModal')).hide();
+                loadTableData($('#formSheetName').val());
+            });
+            else Swal.fire('Error',d.message,'error');
+        });
+    }
+
+    // --- Bulk Import Logic ---
+    function openImportModal() {
+        $('#excelPasteArea').val('');
+        $('#previewTable tbody').empty();
+        $('#previewCount').text('0');
+        $('#btnConfirmImport').prop('disabled',true);
+        const dd = $('#importSheetName'); dd.empty();
+        $('#viewSheetSelector option').each(function(){ if($(this).val()!=='All' && $(this).val()) dd.append($(this).clone()); });
+        new bootstrap.Modal(document.getElementById('importModal')).show();
+    }
+
+    function parseExcelData(text) {
+        bulkData = [];
+        const rows = text.split(/\r\n|\n/);
+        const tbody = $('#previewTable tbody'); tbody.empty();
+        rows.forEach(r => {
+            if(r.trim()==='') return;
+            let cols = r.split('\t');
+            while(cols.length < 12) cols.push("");
+            if(cols.length > 12) cols = cols.slice(0,12);
+            cols.push(""); 
+            bulkData.push(cols);
+            if(bulkData.length<=10) tbody.append(`<tr>${cols.slice(0,12).map(c=>`<td>${c}</td>`).join('')}</tr>`);
+        });
+        $('#previewCount').text(bulkData.length);
+        $('#btnConfirmImport').prop('disabled', bulkData.length===0);
+    }
+
+    function submitBulkData() {
+        Swal.fire({title:`ยืนยัน ${bulkData.length} รายการ?`, showCancelButton:true, confirmButtonText:'ยืนยัน'}).then((res)=>{
+            if(res.isConfirmed) {
+                Swal.fire({title:'กำลังนำเข้า...', didOpen:()=>Swal.showLoading()});
+                fetch('/api/bulk-submit', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({sheetName:$('#importSheetName').val(), rows:bulkData})
+                }).then(r=>r.json()).then(d=>{
+                    Swal.fire('สำเร็จ','','success').then(()=>{
+                        bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                        loadTableData($('#importSheetName').val());
+                    });
                 });
-            } else { Swal.fire('Error', data.message, 'error'); }
-        })
-        .catch(err => Swal.fire('Error', 'เชื่อมต่อ Server ไม่ได้', 'error'));
+            }
+        });
     }
 </script>
 </body>
