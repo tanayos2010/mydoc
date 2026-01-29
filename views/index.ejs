@@ -196,14 +196,17 @@
             if(data && Object.keys(data).length > 0) globalSettings = data;
             
             // Populate Dropdowns
-            populateDropdown('#viewSheetSelector', globalSettings.sheet, true);
-            populateDropdown('#formSheetName', globalSettings.sheet);
-            populateDropdown('#formSecret', globalSettings.secret);
-            populateDropdown('#formSpeed', globalSettings.speed);
-            populateDropdown('#formDept', globalSettings.dept);
-            populateDropdown('#formWorker', globalSettings.worker);
-            populateDropdown('#formMethod', globalSettings.method);
-            populateDropdown('#importSheetName', globalSettings.sheet);
+            // 1. สมุดทะเบียน (ไม่เอาช่องว่าง)
+            populateDropdown('#viewSheetSelector', globalSettings.sheet, true, false);
+            populateDropdown('#formSheetName', globalSettings.sheet, false, false);
+            populateDropdown('#importSheetName', globalSettings.sheet, false, false);
+
+            // 2. ข้อมูลทั่วไป (เพิ่ม true ตัวหลังสุด เพื่อขอช่องว่าง)
+            populateDropdown('#formSecret', globalSettings.secret, false, true);
+            populateDropdown('#formSpeed', globalSettings.speed, false, true);
+            populateDropdown('#formDept', globalSettings.dept, false, true);
+            populateDropdown('#formWorker', globalSettings.worker, false, true);
+            populateDropdown('#formMethod', globalSettings.method, false, true);
         } catch (err) { console.error(err); }
     }
 
@@ -211,6 +214,9 @@
         const dropdown = $(selector);
         dropdown.empty();
         if(includeAll) dropdown.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
+        if(includeBlank) {
+        dropdown.append('<option value="">-</option>');
+    }
         if (items) items.forEach(item => dropdown.append(`<option value="${item.value}">${item.label}</option>`));
     }
 
