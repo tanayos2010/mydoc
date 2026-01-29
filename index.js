@@ -70,6 +70,33 @@ app.post('/submit', upload.single('pdfFile'), async (req, res) => {
     }
 });
 
+// API ดึงข้อมูล Settings (Dropdown)
+app.get('/api/settings', async (req, res) => {
+    try {
+        // ส่ง type=settings ไปบอก GAS
+        const response = await axios.get(`${GAS_API_URL}?type=settings`);
+        res.json(response.data);
+    } catch (error) {
+        console.error("Settings Error:", error.message);
+        res.json([]);
+    }
+});
+
+// API บันทึก Settings
+app.post('/api/save-settings', async (req, res) => {
+    try {
+        // req.body.settings ควรจะเป็น Array เช่น [['สมุด 67', 'Sheet67'], ...]
+        const payload = {
+            action: 'saveSettings',
+            settings: req.body.settings 
+        };
+        await axios.post(GAS_API_URL, payload);
+        res.json({ status: 'success' });
+    } catch (error) {
+        res.status(500).json({ status: 'error' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
