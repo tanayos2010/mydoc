@@ -185,7 +185,7 @@
                 },
                 { 
                     "data": "ลงวันที่",
-                    "render": function(data) { return data ? new Date(data).toLocaleDateString('th-TH') : '-'; }
+                    "defaultContent": "-"
                 },
                 { "data": "เลขที่หนังสือ", "defaultContent": "" },
                 { "data": "ชื่อเรื่อง", "defaultContent": "" },
@@ -243,16 +243,25 @@
             
             // แปลงวันที่สำหรับใส่ใน input type="date"
             if(data['ลงวันที่']) {
-                const d = new Date(data['ลงวันที่']);
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                $('input[name="date"]').val(`${yyyy}-${mm}-${dd}`);
-            }
-
-            if(data['ลิงก์ไฟล์แนบ']) {
-                $('#currentFileLink').html(`ไฟล์ปัจจุบัน: <a href="${data['ลิงก์ไฟล์แนบ']}" target="_blank">เปิดดู</a>`);
-            }
+    // สมมติว่าใน Sheet วันที่เก็บเป็นรูปแบบ "วัน/เดือน/ปี" (เช่น 25/01/2567)
+    // เราต้องแปลงเป็น "2567-01-25" เพื่อใส่ในช่อง input
+    
+    let dateStr = data['ลงวันที่'];
+    
+    // ลองเช็คว่ามีเครื่องหมาย / ไหม ถ้ามีให้สลับด้าน
+    if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        // parts[0] = วัน, parts[1] = เดือน, parts[2] = ปี
+        // ถ้าปีอยู่ข้างหลัง (format ไทย/อังกฤษทั่วไป)
+        if (parts.length === 3) {
+            // สลับเป็น ปี-เดือน-วัน
+            dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+    }
+    
+    // ใส่ค่าลงใน input
+    $('input[name="date"]').val(dateStr);
+}
         }
 
         modal.show();
