@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 // ********** ใส่ URL Web App ล่าสุดของคุณที่นี่ **********
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwgUOVrgC5YY6oanUcMAOilp6hthVELuBi3ImmauhpHrOZJouKyOx8eVOQku6NARA0/exec'; 
 
-aapp.set('view engine', 'ejs');
+app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
@@ -54,3 +54,4 @@ app.post('/submit', upload.single('pdfFile'), async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
