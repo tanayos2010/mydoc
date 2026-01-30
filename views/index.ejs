@@ -16,6 +16,19 @@
         .section-container { display: none; animation: fadeIn 0.3s; }
         .section-container.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- แก้ปัญหาข้อ 4: Dropdown สีเพี้ยน/มองไม่เห็นตัวหนังสือ --- */
+        select.form-select option {
+            background-color: white !important;
+            color: black !important;
+            padding: 10px;
+        }
+        /* บังคับสีตอนเลือก */
+        select.form-select:focus {
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
     </style>
 </head>
 <body>
@@ -47,7 +60,9 @@
                 <h5 class="mb-0">รายการหนังสือทั้งหมด</h5>
                 <div class="d-flex gap-2 align-items-center">
                     <span>เลือกสมุด:</span>
-                    <select id="searchSheetSelect" class="form-select form-select-sm w-auto text-dark"><option>Loading...</option></select>
+                    <select id="searchSheetSelect" class="form-select form-select-sm w-auto text-dark fw-bold">
+                        <option value="" disabled selected>กำลังโหลด...</option>
+                    </select>
                 </div>
             </div>
             <div class="card-body">
@@ -90,7 +105,8 @@
                 <div class="row">
                     <div class="col-md-3 border-end">
                         <div class="nav flex-column nav-pills">
-                            <button class="nav-link active" onclick="switchSettingsCategory('secret')">ชั้นความลับ</button>
+                            <button class="nav-link active" onclick="switchSettingsCategory('sheet')">สมุดทะเบียน</button>
+                            <button class="nav-link" onclick="switchSettingsCategory('secret')">ชั้นความลับ</button>
                             <button class="nav-link" onclick="switchSettingsCategory('speed')">ชั้นความเร็ว</button>
                             <button class="nav-link" onclick="switchSettingsCategory('dept')">ฝ่าย/แผนก</button>
                             <button class="nav-link" onclick="switchSettingsCategory('worker')">ผู้ปฏิบัติ</button>
@@ -98,9 +114,10 @@
                         </div>
                     </div>
                     <div class="col-md-9">
-                        <h6 id="settingCategoryTitle" class="fw-bold text-primary mb-3">ชั้นความลับ</h6>
+                        <h6 id="settingCategoryTitle" class="fw-bold text-primary mb-3">สมุดทะเบียน</h6>
+                        <div class="alert alert-info py-1 small"><i class="fas fa-info-circle"></i> ชื่อ Sheet ต้องตรงกับใน Google Sheet เป๊ะๆ (เช่น Sheet1) ส่วนชื่อที่แสดงตั้งอะไรก็ได้</div>
                         <table class="table table-bordered table-sm" id="settingsTable">
-                            <thead class="table-light"><tr><th>ชื่อข้อมูล</th><th style="width:50px">ลบ</th></tr></thead>
+                            <thead class="table-light"></thead>
                             <tbody></tbody>
                         </table>
                         <button class="btn btn-sm btn-success w-100" onclick="addSettingRow()">+ เพิ่มรายการใหม่</button>
@@ -168,62 +185,95 @@
 <script>
     let viewTable, editTable;
     let allData = [];
-    let globalSettings = { secret:[], speed:[], dept:[], worker:[], method:[] };
-    let currentCategoryEdit = 'secret';
+    // Initialize default structure เพื่อป้องกัน error ถ้า Config ว่าง
+    let globalSettings = { sheet:[], secret:[], speed:[], dept:[], worker:[], method:[] };
+    let autoSheets = []; 
+    let currentCategoryEdit = 'sheet';
 
     $(document).ready(function() {
-        // โหลดข้อมูลพร้อมกัน
-        Promise.all([loadGlobalSettings(), loadSheetNames()]).then(() => {
-            console.log("Initial data loaded");
+        // โหลดข้อมูลให้เสร็จก่อน แล้วค่อยสร้าง Dropdown
+        Promise.all([loadGlobalSettings(), loadAutoSheetNames()]).then(() => {
+            initializeSheetDropdowns();
+            initializeFormDropdowns();
         });
 
         $('#searchSheetSelect').change(function() { loadTableData($(this).val(), 'view'); });
         $('#manageSheetSelect').change(function() { loadTableData($(this).val(), 'edit'); });
     });
 
-    // --- 1. Load Sheets (ดึงรายชื่อ Sheet อัตโนมัติ) ---
-    async function loadSheetNames() {
-        try {
-            const res = await fetch('/api/data?type=getSheetNames');
-            const sheets = await res.json();
-            
-            const searchDD = $('#searchSheetSelect');
-            const manageDD = $('#manageSheetSelect');
-            const formDD = $('#formSheetSelect');
-            
-            searchDD.empty(); manageDD.empty(); formDD.empty();
-            searchDD.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
-
-            if (sheets && sheets.length > 0) {
-                sheets.forEach(name => {
-                    const option = `<option value="${name}">${name}</option>`;
-                    searchDD.append(option);
-                    manageDD.append(option);
-                    formDD.append(option);
-                });
-                // โหลดข้อมูลเริ่มต้น
-                loadTableData("All", 'view');
-                loadTableData(sheets[0], 'edit');
-            } else {
-                searchDD.html('<option disabled>ไม่พบสมุดทะเบียน</option>');
-            }
-        } catch(e) { console.error(e); }
-    }
-
-    // --- 2. Settings Logic ---
+    // --- 1. Load Data (แก้ปัญหาข้อ 3: ดึง Config ไม่มา) ---
     async function loadGlobalSettings() {
         try {
             const res = await fetch('/api/settings');
             const data = await res.json();
-            if(data && Object.keys(data).length > 0) globalSettings = data;
+            // ผสานข้อมูล: ถ้า Server ส่งมา ให้ทับ Default
+            if(data && typeof data === 'object') {
+                globalSettings = { ...globalSettings, ...data };
+            }
+        } catch(e) { console.error("Config Load Error:", e); }
+    }
+
+    async function loadAutoSheetNames() {
+        try {
+            const res = await fetch('/api/data?type=getSheetNames');
+            const data = await res.json();
+            if(Array.isArray(data)) autoSheets = data;
+        } catch(e) { console.error("Sheet Name Load Error:", e); }
+    }
+
+    // --- 2. Build Dropdowns (แก้ปัญหาข้อ 1: ไม่มี All) ---
+    function initializeSheetDropdowns() {
+        const searchDD = $('#searchSheetSelect');
+        const manageDD = $('#manageSheetSelect');
+        const formDD = $('#formSheetSelect');
+        
+        searchDD.empty(); manageDD.empty(); formDD.empty();
+        
+        // 2.1 เพิ่มตัวเลือก "ค้นหาทั้งหมด" ในหน้าค้นหา
+        searchDD.append('<option value="All" style="font-weight:bold; color:blue;">--- ค้นหาทั้งหมด ---</option>');
+
+        // 2.2 ผสาน Config + Auto (Priority: Config > Auto)
+        let finalOptions = [];
+        
+        // เอาจาก Config ก่อน (เพราะมี Label สวยๆ)
+        if(globalSettings.sheet && globalSettings.sheet.length > 0) {
+            globalSettings.sheet.forEach(s => {
+                finalOptions.push({ label: s.label, value: s.value });
+            });
+        }
+
+        // เอาจาก Auto (เฉพาะอันที่ยังไม่มีใน Config)
+        autoSheets.forEach(name => {
+            const exists = finalOptions.some(opt => opt.value === name);
+            if(!exists) {
+                finalOptions.push({ label: name + " (Auto)", value: name });
+            }
+        });
+
+        // 2.3 สร้าง HTML options
+        if(finalOptions.length === 0) {
+             const noData = '<option disabled>ไม่พบสมุดทะเบียน</option>';
+             searchDD.append(noData); manageDD.append(noData); formDD.append(noData);
+        } else {
+            finalOptions.forEach(opt => {
+                const html = `<option value="${opt.value}">${opt.label}</option>`;
+                searchDD.append(html);
+                manageDD.append(html);
+                formDD.append(html);
+            });
             
-            // Populate Dropdowns
-            populateDropdown('#formSecret', globalSettings.secret, true);
-            populateDropdown('#formSpeed', globalSettings.speed, true);
-            populateDropdown('#formDept', globalSettings.dept, true);
-            populateDropdown('#formWorker', globalSettings.worker, true);
-            populateDropdown('#formMethod', globalSettings.method, true);
-        } catch (err) { console.error(err); }
+            // โหลดข้อมูลเริ่มต้น
+            loadTableData("All", 'view');
+            loadTableData(finalOptions[0].value, 'edit');
+        }
+    }
+
+    function initializeFormDropdowns() {
+        populateDropdown('#formSecret', globalSettings.secret, true);
+        populateDropdown('#formSpeed', globalSettings.speed, true);
+        populateDropdown('#formDept', globalSettings.dept, true);
+        populateDropdown('#formWorker', globalSettings.worker, true);
+        populateDropdown('#formMethod', globalSettings.method, true);
     }
 
     function populateDropdown(selector, items, includeBlank = false) {
@@ -233,9 +283,10 @@
         if (items) items.forEach(item => dropdown.append(`<option value="${item.value}">${item.label}</option>`));
     }
 
+    // --- 3. Settings Modal (แก้ปัญหาข้อ 2: คืนค่าเมนูสมุด) ---
     function openSettingsModal() {
-        currentCategoryEdit = 'secret';
-        renderSettingTable('secret');
+        currentCategoryEdit = 'sheet'; // เริ่มที่หน้า Sheet เสมอ
+        renderSettingTable('sheet');
         new bootstrap.Modal(document.getElementById('settingsModal')).show();
     }
 
@@ -247,8 +298,14 @@
     function captureCurrentTableData() {
         const currentItems = [];
         $('#settingsTable tbody tr').each(function() {
-            const v = $(this).find('.set-single-value').val().trim();
-            if(v) currentItems.push({label: v, value: v});
+            if(currentCategoryEdit === 'sheet') {
+                const l = $(this).find('.set-label').val().trim();
+                const v = $(this).find('.set-value').val().trim();
+                if(l && v) currentItems.push({label: l, value: v});
+            } else {
+                const v = $(this).find('.set-single-value').val().trim();
+                if(v) currentItems.push({label: v, value: v});
+            }
         });
         globalSettings[currentCategoryEdit] = currentItems;
     }
@@ -257,19 +314,45 @@
         currentCategoryEdit = category;
         $('.nav-link').removeClass('active');
         $(`.nav-link[onclick="switchSettingsCategory('${category}')"]`).addClass('active');
-        const titles = { secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
+        const titles = { sheet: 'สมุดทะเบียน', secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
         $('#settingCategoryTitle').text(titles[category]);
 
         const thead = $('#settingsTable thead'); thead.empty();
-        thead.append('<tr><th>ชื่อข้อมูล</th><th style="width:50px">ลบ</th></tr>');
+        // สร้างหัวตารางแยกตามหมวดหมู่
+        if(category === 'sheet') {
+            thead.append('<tr><th>ชื่อที่แสดง (เช่น ปี 67)</th><th>ชื่อ Sheet (เช่น Sheet67)</th><th style="width:50px">ลบ</th></tr>');
+        } else {
+            thead.append('<tr><th>ชื่อข้อมูล</th><th style="width:50px">ลบ</th></tr>');
+        }
 
         const tbody = $('#settingsTable tbody'); tbody.empty();
         const items = globalSettings[category] || [];
-        items.forEach(item => addSettingRow(item.label));
+        
+        items.forEach(item => {
+            if(category === 'sheet') addSettingRowSheet(item.label, item.value);
+            else addSettingRowNormal(item.label); // หรือ item.value ค่าเดียวกัน
+        });
     }
 
-    function addSettingRow(value = '') {
-        const tr = `<tr><td><input type="text" class="form-control form-control-sm set-single-value" value="${value}" placeholder="ใส่ข้อมูล"></td><td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td></tr>`;
+    function addSettingRow() {
+        if(currentCategoryEdit === 'sheet') addSettingRowSheet();
+        else addSettingRowNormal();
+    }
+
+    function addSettingRowSheet(label='', value='') {
+        const tr = `<tr>
+            <td><input type="text" class="form-control form-control-sm set-label" value="${label}" placeholder="ชื่อโชว์"></td>
+            <td><input type="text" class="form-control form-control-sm set-value" value="${value}" placeholder="ชื่อ Sheet"></td>
+            <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+        $('#settingsTable tbody').append(tr);
+    }
+
+    function addSettingRowNormal(value='') {
+        const tr = `<tr>
+            <td><input type="text" class="form-control form-control-sm set-single-value" value="${value}" placeholder="ใส่ข้อมูล"></td>
+            <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
         $('#settingsTable tbody').append(tr);
     }
 
@@ -277,11 +360,9 @@
         captureCurrentTableData();
         let flatSettings = [];
         Object.keys(globalSettings).forEach(cat => {
-            // เราไม่สนใจ sheet ใน config แล้ว เพราะเราดึง Auto แทน
-            if(cat !== 'sheet') {
-                globalSettings[cat].forEach(item => flatSettings.push([cat, item.label, item.value]));
-            }
+            globalSettings[cat].forEach(item => flatSettings.push([cat, item.label, item.value]));
         });
+        
         Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()});
         fetch('/api/save-settings', {
             method:'POST', headers:{'Content-Type':'application/json'},
@@ -291,7 +372,7 @@
         });
     }
 
-    // --- 3. Tabs & Table ---
+    // --- 4. Tabs & Table ---
     function switchTab(tabName) {
         $('.nav-link').removeClass('active');
         $('.section-container').removeClass('active');
@@ -325,13 +406,14 @@
         if(mode === 'view') viewTable = dt; else editTable = dt;
     }
 
-    // --- 4. Modal Form ---
+    // --- 5. Modal Data Form ---
     function openModal(mode, rowIndex = null) {
         const modal = new bootstrap.Modal(document.getElementById('dataModal'));
         document.getElementById('docForm').reset();
         
         // Auto select current sheet
-        $('#formSheetSelect').val($('#manageSheetSelect').val());
+        const currentManageSheet = $('#manageSheetSelect').val();
+        if(currentManageSheet) $('#formSheetSelect').val(currentManageSheet);
 
         if (mode === 'add') {
             $('#modalTitle').text('เพิ่มข้อมูลใหม่');
