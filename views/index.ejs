@@ -23,6 +23,11 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand text-primary" href="#"><i class="fas fa-book-open"></i> งานสารบรรณ</a>
+        <div class="d-flex align-items-center">
+             <button class="btn btn-outline-secondary btn-sm me-3" onclick="openSettingsModal()">
+                <i class="fas fa-cog"></i> ตั้งค่าตัวเลือก
+            </button>
+        </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -32,7 +37,7 @@
                     <a class="nav-link active" onclick="switchTab('search')"><i class="fas fa-search"></i> ค้นหาหนังสือ</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" onclick="switchTab('manage')"><i class="fas fa-edit"></i> จัดการข้อมูล (เพิ่ม/แก้ไข)</a>
+                    <a class="nav-link" onclick="switchTab('manage')"><i class="fas fa-edit"></i> จัดการข้อมูล</a>
                 </li>
             </ul>
         </div>
@@ -53,17 +58,9 @@
                 </div>
             </div>
             <div class="card-body">
-                <table id="viewTable" class="table table-hover table-bordered w-100">
+                <table id="viewTable" class="table table-hover table-bordered w-100 table-sm">
                     <thead class="table-light">
-                        <tr>
-                            <th>เลขทะเบียน</th>
-                            <th>วันที่</th>
-                            <th>เรื่อง</th>
-                            <th>จาก</th>
-                            <th>ถึง</th>
-                            <th>สถานะ</th>
-                            <th>เอกสาร</th>
-                        </tr>
+                        <tr><th>ทะเบียน</th><th>วันที่</th><th>เรื่อง</th><th>จาก</th><th>ถึง</th><th>สถานะ</th><th>เอกสาร</th></tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -75,38 +72,59 @@
         <div class="card shadow-sm border-0">
             <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fas fa-tools"></i> จัดการข้อมูล</h5>
-                <button class="btn btn-success btn-sm" onclick="openModal('add')">
-                    <i class="fas fa-plus-circle"></i> ลงรับหนังสือใหม่
-                </button>
+                <button class="btn btn-success btn-sm" onclick="openModal('add')"><i class="fas fa-plus-circle"></i> ลงรับหนังสือใหม่</button>
             </div>
             <div class="card-body">
-                <div class="alert alert-info py-2 mb-3">
-                    <small><i class="fas fa-info-circle"></i> เลือกสมุดทะเบียนด้านล่างเพื่อดูและแก้ไขข้อมูลในเล่มนั้นๆ</small>
-                </div>
-                
-                <div class="mb-3 d-flex gap-2 align-items-center">
-                    <label class="fw-bold">เลือกสมุดที่จะจัดการ:</label>
+                <div class="mb-3 d-flex gap-2 align-items-center bg-light p-2 rounded">
+                    <label class="fw-bold">กำลังแก้ไขสมุด:</label>
                     <select id="manageSheetSelect" class="form-select w-auto">
                         <option value="" disabled selected>Loading...</option>
                     </select>
                 </div>
-
-                <table id="editTable" class="table table-striped table-bordered w-100">
+                <table id="editTable" class="table table-striped table-bordered w-100 table-sm">
                     <thead class="table-dark">
-                        <tr>
-                            <th style="width: 80px;">จัดการ</th>
-                            <th>เลขทะเบียน</th>
-                            <th>เรื่อง</th>
-                            <th>วันที่</th>
-                            <th>ผู้ปฏิบัติ</th>
-                        </tr>
+                        <tr><th style="width: 50px;">แก้ไข</th><th>ทะเบียน</th><th>เรื่อง</th><th>วันที่</th><th>ผู้ปฏิบัติ</th></tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
+</div>
 
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title"><i class="fas fa-cogs"></i> ตั้งค่าตัวเลือก Dropdown</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-3 border-end">
+                        <div class="nav flex-column nav-pills">
+                            <button class="nav-link active" onclick="switchSettingsCategory('secret')">ชั้นความลับ</button>
+                            <button class="nav-link" onclick="switchSettingsCategory('speed')">ชั้นความเร็ว</button>
+                            <button class="nav-link" onclick="switchSettingsCategory('dept')">ฝ่าย/แผนก</button>
+                            <button class="nav-link" onclick="switchSettingsCategory('worker')">ผู้ปฏิบัติ</button>
+                            <button class="nav-link" onclick="switchSettingsCategory('method')">วิธีรับ</button>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <h6 id="settingCategoryTitle" class="fw-bold text-primary mb-3">ชั้นความลับ</h6>
+                        <table class="table table-bordered table-sm" id="settingsTable">
+                            <thead class="table-light"><tr><th>ชื่อข้อมูล</th><th style="width:50px">ลบ</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                        <button class="btn btn-sm btn-success w-100" onclick="addSettingRow()">+ เพิ่มรายการใหม่</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="saveAllSettings()">บันทึกการตั้งค่า</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="dataModal" tabindex="-1" data-bs-backdrop="static">
@@ -122,27 +140,27 @@
                     <input type="hidden" name="rowIndex" id="formRowIndex">
                     <input type="hidden" name="oldFileUrl" id="formOldFileUrl">
 
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="fw-bold text-danger">บันทึกลงสมุดทะเบียน:</label>
-                            <select name="sheetName" id="formSheetSelect" class="form-select bg-light" required>
-                                </select>
+                    <div class="row g-2">
+                        <div class="col-12 mb-2">
+                            <label class="fw-bold text-danger">บันทึกลงสมุด:</label>
+                            <select name="sheetName" id="formSheetSelect" class="form-select bg-light" required></select>
                         </div>
-
-                        <div class="col-md-4"><label>เลขทะเบียนรับ</label><input type="text" name="regNo" class="form-control" required></div>
-                        <div class="col-md-4"><label>ลงวันที่</label><input type="date" name="date" class="form-control"></div>
-                        <div class="col-md-4"><label>ชั้นความลับ</label>
-                             <select name="secretLevel" class="form-select"><option value="ปกติ">ปกติ</option><option value="ลับ">ลับ</option></select>
-                        </div>
+                        <div class="col-md-3"><label>เลขทะเบียนรับ</label><input type="text" name="regNo" class="form-control" required></div>
+                        <div class="col-md-3"><label>ลงวันที่</label><input type="date" name="date" class="form-control"></div>
+                        <div class="col-md-3"><label>ชั้นความลับ</label><select name="secretLevel" id="formSecret" class="form-select"></select></div>
+                        <div class="col-md-3"><label>ชั้นความเร็ว</label><select name="speedLevel" id="formSpeed" class="form-select"></select></div>
                         
+                        <div class="col-md-4"><label>เลขที่หนังสือ</label><input type="text" name="bookNo" class="form-control"></div>
+                        <div class="col-md-4"><label>จาก</label><input type="text" name="from" class="form-control"></div>
+                        <div class="col-md-4"><label>ถึง</label><input type="text" name="to" class="form-control"></div>
                         <div class="col-12"><label>ชื่อเรื่อง</label><input type="text" name="subject" class="form-control" required></div>
-                        <div class="col-md-6"><label>จาก</label><input type="text" name="from" class="form-control"></div>
-                        <div class="col-md-6"><label>ถึง</label><input type="text" name="to" class="form-control"></div>
                         
-                        <div class="col-12 mt-3 p-3 bg-light border rounded">
-                            <label class="fw-bold"><i class="fas fa-paperclip"></i> แนบไฟล์ PDF</label>
-                            <input type="file" name="pdfFile" class="form-control mt-1" accept="application/pdf">
-                        </div>
+                        <div class="col-md-6"><label>ฝ่าย</label><select name="dept" id="formDept" class="form-select"></select></div>
+                        <div class="col-md-6"><label>ผู้ปฏิบัติ</label><select name="worker" id="formWorker" class="form-select"></select></div>
+                        <div class="col-md-6"><label>วิธีรับ</label><select name="method" id="formMethod" class="form-select"></select></div>
+                        <div class="col-md-6"><label>หมายเหตุ</label><input type="text" name="remark" class="form-control"></div>
+
+                        <div class="col-12 mt-3"><label class="fw-bold">แนบไฟล์ PDF</label><input type="file" name="pdfFile" class="form-control" accept="application/pdf"></div>
                     </div>
                 </form>
             </div>
@@ -163,77 +181,150 @@
 <script>
     let viewTable, editTable;
     let allData = [];
+    let globalSettings = { secret:[], speed:[], dept:[], worker:[], method:[] };
+    let currentCategoryEdit = 'secret';
 
     $(document).ready(function() {
-        // 1. โหลดรายชื่อ Sheet ทั้งหมดก่อน
+        // 1. โหลดชื่อ Sheet สำหรับ Dropdown เลือกสมุด
         loadSheetNames();
+        // 2. โหลด Settings สำหรับ Dropdown ในฟอร์ม
+        loadGlobalSettings();
 
-        // 2. เมื่อเปลี่ยน Dropdown หน้าค้นหา -> โหลดตารางค้นหาใหม่
-        $('#searchSheetSelect').change(function() {
-            loadTableData($(this).val(), 'view');
-        });
-
-        // 3. เมื่อเปลี่ยน Dropdown หน้าจัดการ -> โหลดตารางแก้ไขใหม่
-        $('#manageSheetSelect').change(function() {
-            loadTableData($(this).val(), 'edit');
-        });
+        // Events
+        $('#searchSheetSelect').change(function() { loadTableData($(this).val(), 'view'); });
+        $('#manageSheetSelect').change(function() { loadTableData($(this).val(), 'edit'); });
     });
 
-    // --- ฟังก์ชันโหลดรายชื่อ Sheet ลง Dropdown ---
+    // --- 1. Load Sheets ---
     function loadSheetNames() {
-        // เรียก API ไปที่ GAS โดยเพิ่ม parameter type=getSheetNames
-        fetch('/api/data?type=getSheetNames') // หรือ URL GAS ของคุณ + ?type=getSheetNames
+        fetch('/api/data?type=getSheetNames')
             .then(res => res.json())
             .then(sheets => {
                 const searchDD = $('#searchSheetSelect');
                 const manageDD = $('#manageSheetSelect');
                 const formDD = $('#formSheetSelect');
-
+                
                 searchDD.empty(); manageDD.empty(); formDD.empty();
+                
+                // เพิ่มตัวเลือก "ทั้งหมด" ในหน้าค้นหา
+                searchDD.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
 
                 sheets.forEach(sheet => {
-                    const option = `<option value="${sheet}">${sheet}</option>`;
-                    searchDD.append(option);
-                    manageDD.append(option);
-                    formDD.append(option);
+                    searchDD.append(`<option value="${sheet}">${sheet}</option>`);
+                    manageDD.append(`<option value="${sheet}">${sheet}</option>`);
+                    formDD.append(`<option value="${sheet}">${sheet}</option>`);
                 });
 
-                // โหลดข้อมูลเริ่มต้น (เลือก Sheet แรก)
+                // โหลดข้อมูลเริ่มต้น
                 if(sheets.length > 0) {
-                    loadTableData(sheets[0], 'view');
-                    loadTableData(sheets[0], 'edit');
+                    loadTableData("All", 'view'); // หน้าค้นหาให้ดูทั้งหมดก่อน
+                    loadTableData(sheets[0], 'edit'); // หน้าจัดการให้เลือกเล่มแรก
                 }
             });
     }
 
-    // --- ฟังก์ชันสลับหน้า Tab ---
+    // --- 2. Load Settings & Populate Form Dropdowns ---
+    async function loadGlobalSettings() {
+        try {
+            const response = await fetch('/api/settings');
+            const data = await response.json();
+            if(data && Object.keys(data).length > 0) globalSettings = data;
+            
+            populateDropdown('#formSecret', globalSettings.secret, true);
+            populateDropdown('#formSpeed', globalSettings.speed, true);
+            populateDropdown('#formDept', globalSettings.dept, true);
+            populateDropdown('#formWorker', globalSettings.worker, true);
+            populateDropdown('#formMethod', globalSettings.method, true);
+        } catch (err) { console.error(err); }
+    }
+
+    function populateDropdown(selector, items, includeBlank = false) {
+        const dropdown = $(selector);
+        dropdown.empty();
+        if(includeBlank) dropdown.append('<option value="">-</option>');
+        if (items) items.forEach(item => dropdown.append(`<option value="${item.value}">${item.label}</option>`));
+    }
+
+    // --- 3. Settings Modal Logic ---
+    function openSettingsModal() {
+        currentCategoryEdit = 'secret';
+        renderSettingTable('secret');
+        new bootstrap.Modal(document.getElementById('settingsModal')).show();
+    }
+
+    function switchSettingsCategory(cat) {
+        // จำค่าเก่า
+        captureCurrentTableData();
+        renderSettingTable(cat);
+    }
+
+    function captureCurrentTableData() {
+        const currentItems = [];
+        $('#settingsTable tbody tr').each(function() {
+            const v = $(this).find('.set-single-value').val().trim();
+            if(v) currentItems.push({label: v, value: v});
+        });
+        globalSettings[currentCategoryEdit] = currentItems;
+    }
+
+    function renderSettingTable(category) {
+        currentCategoryEdit = category;
+        $('.nav-link').removeClass('active');
+        $(`.nav-link[onclick="switchSettingsCategory('${category}')"]`).addClass('active');
+        
+        const titles = { secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
+        $('#settingCategoryTitle').text(titles[category]);
+
+        const tbody = $('#settingsTable tbody'); tbody.empty();
+        const items = globalSettings[category] || [];
+        items.forEach(item => addSettingRow(item.label));
+    }
+
+    function addSettingRow(value = '') {
+        const tr = `<tr>
+            <td><input type="text" class="form-control form-control-sm set-single-value" value="${value}" placeholder="ใส่ข้อมูล"></td>
+            <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+        $('#settingsTable tbody').append(tr);
+    }
+
+    function saveAllSettings() {
+        captureCurrentTableData();
+        let flatSettings = [];
+        Object.keys(globalSettings).forEach(cat => {
+            globalSettings[cat].forEach(item => flatSettings.push([cat, item.label, item.value]));
+        });
+        
+        Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()});
+        fetch('/api/save-settings', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({settings: flatSettings})
+        }).then(res=>res.json()).then(d=>{
+            Swal.fire('สำเร็จ','บันทึกเรียบร้อย','success').then(()=>location.reload());
+        });
+    }
+
+    // --- 4. Tabs & Table Logic ---
     function switchTab(tabName) {
         $('.nav-link').removeClass('active');
         $('.section-container').removeClass('active');
-
         if(tabName === 'search') {
             $('#searchSection').addClass('active');
-            $('.nav-link:eq(0)').addClass('active');
-            // รีเฟรชตารางค้นหาเพื่อให้ขนาดคอลัมน์ถูกต้อง
+            $('.nav-link:eq(0)').addClass('active'); // active tab 1
             if(viewTable) viewTable.columns.adjust().draw(); 
         } else {
             $('#manageSection').addClass('active');
-            $('.nav-link:eq(1)').addClass('active');
+            $('.nav-link:eq(1)').addClass('active'); // active tab 2
             if(editTable) editTable.columns.adjust().draw();
         }
     }
 
-    // --- ฟังก์ชันโหลดข้อมูลลงตาราง (แยกตารางดู กับ ตารางแก้) ---
     function loadTableData(sheetName, mode) {
         const tableId = mode === 'view' ? '#viewTable' : '#editTable';
-        
-        // ถ้ามีตารางอยู่แล้วให้ทำลายก่อนสร้างใหม่
-        if ($.fn.DataTable.isDataTable(tableId)) {
-            $(tableId).DataTable().destroy();
-        }
+        if ($.fn.DataTable.isDataTable(tableId)) $(tableId).DataTable().destroy();
 
         const columnsConfig = mode === 'view' 
-            ? [ // คอลัมน์สำหรับหน้า "ค้นหา" (ดูง่ายๆ)
+            ? [
                 { "data": "เลขทะเบียนลงรับ" },
                 { "data": "ลงวันที่" },
                 { "data": "ชื่อเรื่อง" },
@@ -242,13 +333,8 @@
                 { "data": "ชั้นความลับ", "render": d => `<span class="badge bg-secondary">${d}</span>` },
                 { "data": "ลิงก์ไฟล์แนบ", "render": d => d ? `<a href="${d}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-pdf"></i></a>` : '-' }
               ]
-            : [ // คอลัมน์สำหรับหน้า "จัดการ" (มีปุ่มแก้ไข)
-                { 
-                    "data": null,
-                    "render": function(data, type, row, meta) {
-                        return `<button class="btn btn-warning btn-sm text-white" onclick="openModal('edit', ${meta.row})"><i class="fas fa-edit"></i></button>`;
-                    }
-                },
+            : [
+                { "data": null, "render": (d,t,r,m) => `<button class="btn btn-warning btn-sm" onclick="openModal('edit', ${m.row})"><i class="fas fa-edit"></i></button>` },
                 { "data": "เลขทะเบียนลงรับ" },
                 { "data": "ชื่อเรื่อง" },
                 { "data": "ลงวันที่" },
@@ -257,51 +343,58 @@
 
         const dt = $(tableId).DataTable({
             "ajax": {
-                "url": "/api/data?sheet=" + encodeURIComponent(sheetName), // แก้ URL ให้ตรงกับ Backend
+                "url": "/api/data?sheet=" + encodeURIComponent(sheetName),
                 "dataSrc": function(json) {
-                    if(mode === 'edit') allData = json; // เก็บข้อมูลดิบไว้ใช้ตอนกดปุ่ม Edit
+                    if(mode === 'edit') allData = json;
                     return json;
                 }
             },
             "columns": columnsConfig,
-            "order": [[ 1, "desc" ]], // เรียงตามวันที่ล่าสุด
+            "order": [[ 1, "desc" ]],
             "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" }
         });
-
-        if(mode === 'view') viewTable = dt;
-        else editTable = dt;
+        if(mode === 'view') viewTable = dt; else editTable = dt;
     }
 
-    // --- ฟังก์ชันเปิด Modal (จัดการ Dropdown Sheet) ---
+    // --- 5. Add/Edit Logic ---
     function openModal(mode, rowIndex = null) {
         const modal = new bootstrap.Modal(document.getElementById('dataModal'));
-        const form = document.getElementById('docForm');
-        form.reset();
-
-        // ดึงค่า Sheet ที่เลือกอยู่ในหน้า Manage มาใส่ในฟอร์มอัตโนมัติ
-        const currentSheet = $('#manageSheetSelect').val();
-        $('#formSheetSelect').val(currentSheet);
+        document.getElementById('docForm').reset();
+        
+        // Auto select current sheet in manage view
+        $('#formSheetSelect').val($('#manageSheetSelect').val());
 
         if (mode === 'add') {
             $('#modalTitle').text('เพิ่มข้อมูลใหม่');
             $('#formAction').val('add');
-            // ปลดล็อคให้เลือก Sheet อื่นได้ถ้าต้องการ
-            // $('#formSheetSelect').prop('disabled', false); 
-
+            $('input[name="date"]').val(new Date().toISOString().split('T')[0]);
         } else if (mode === 'edit') {
             const data = allData[rowIndex];
             $('#modalTitle').text('แก้ไขข้อมูล');
             $('#formAction').val('edit');
             $('#formRowIndex').val(data.rowIndex);
             $('#formOldFileUrl').val(data['ลิงก์ไฟล์แนบ']);
-
-            // เติมข้อมูลลงฟอร์ม
+            
+            // Populate Data
+            if(data.sheetName) $('#formSheetSelect').val(data.sheetName);
+            $('#formSecret').val(data['ชั้นความลับ']);
+            $('#formSpeed').val(data['ชั้นความเร็ว']);
+            $('#formDept').val(data['ฝ่าย']);
+            $('#formWorker').val(data['ผู้ปฏิบัติ']);
+            $('#formMethod').val(data['วิธีการรับเอกสาร']);
+            
             $('input[name="regNo"]').val(data['เลขทะเบียนลงรับ']);
+            $('input[name="bookNo"]').val(data['เลขที่หนังสือ']);
             $('input[name="subject"]').val(data['ชื่อเรื่อง']);
-            // ... (เติมฟิลด์อื่นๆ ให้ครบตามเดิม) ...
-
-            // ล็อคไม่ให้เปลี่ยน Sheet ตอนแก้ไข (ป้องกันข้อมูลข้าม Sheet)
-            // $('#formSheetSelect').prop('disabled', true); 
+            $('input[name="from"]').val(data['จาก']);
+            $('input[name="to"]').val(data['ถึง']);
+            $('input[name="remark"]').val(data['หมายเหตุ']);
+            
+            if(data['ลงวันที่']) {
+                let d = data['ลงวันที่'];
+                if(d.includes('/')) { const p=d.split('/'); if(p.length===3) d=`${p[2]}-${p[1]}-${p[0]}`; }
+                $('input[name="date"]').val(d);
+            }
         }
         modal.show();
     }
@@ -312,52 +405,9 @@
         fetch('/submit', { method:'POST', body:fd }).then(r=>r.json()).then(d=>{
             if(d.status==='success') Swal.fire('สำเร็จ','','success').then(()=>{
                 bootstrap.Modal.getInstance(document.getElementById('dataModal')).hide();
-                loadTableData($('#formSheetName').val());
+                loadTableData($('#formSheetSelect').val(), 'edit');
             });
             else Swal.fire('Error', d.message, 'error');
-        });
-    }
-
-    // --- Import ---
-    function openImportModal() {
-        $('#excelPasteArea').val('');
-        $('#previewTable tbody').empty();
-        $('#btnConfirmImport').prop('disabled',true);
-        const dd = $('#importSheetName'); dd.empty();
-        // ก็อปตัวเลือกสมุดมาใส่ ยกเว้น "ทั้งหมด"
-        $('#viewSheetSelector option').each(function(){ if($(this).val()!=='All' && $(this).val()) dd.append($(this).clone()); });
-        new bootstrap.Modal(document.getElementById('importModal')).show();
-    }
-    
-    function parseExcelData(text) {
-        bulkData = [];
-        const rows = text.split(/\r\n|\n/);
-        const tbody = $('#previewTable tbody'); tbody.empty();
-        rows.forEach(r => {
-            if(r.trim()==='') return;
-            let cols = r.split('\t');
-            while(cols.length < 12) cols.push("");
-            cols.push(""); 
-            bulkData.push(cols);
-            if(bulkData.length<=10) tbody.append(`<tr>${cols.slice(0,12).map(c=>`<td>${c}</td>`).join('')}</tr>`);
-        });
-        $('#btnConfirmImport').prop('disabled', bulkData.length===0);
-    }
-
-    function submitBulkData() {
-        Swal.fire({title:`ยืนยัน ${bulkData.length} รายการ?`, showCancelButton:true, confirmButtonText:'ยืนยัน'}).then((res)=>{
-            if(res.isConfirmed) {
-                Swal.fire({title:'กำลังนำเข้า...', didOpen:()=>Swal.showLoading()});
-                fetch('/api/bulk-submit', {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({sheetName:$('#importSheetName').val(), rows:bulkData})
-                }).then(r=>r.json()).then(d=>{
-                    Swal.fire('สำเร็จ','','success').then(()=>{
-                        bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
-                        loadTableData($('#importSheetName').val());
-                    });
-                });
-            }
         });
     }
 </script>
