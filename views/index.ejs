@@ -11,20 +11,55 @@
     
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; font-size: 14px; }
-        .nav-link { cursor: pointer; font-weight: bold; color: #555; }
-        .nav-link.active { color: #0d6efd !important; border-bottom: 3px solid #0d6efd; }
-        .section-container { display: none; }
-        .section-container.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* --- 1. แก้ไขเมนูด้านบน (Top Navbar) --- */
+        /* ให้ตัวหนังสือเป็นสีเทาเข้มเมื่อยังไม่เลือก */
+        .navbar .nav-link { cursor: pointer; font-weight: bold; color: #555; }
+        /* เมื่อเลือกแล้ว ให้เป็นสีน้ำเงิน และมีขีดเส้นใต้ */
+        .navbar .nav-link.active { 
+            color: #0d6efd !important; 
+            border-bottom: 3px solid #0d6efd; 
+            background-color: transparent !important; /* บังคับพื้นหลังใส */
+        }
+
+        /* --- 2. แก้ไขเมนูในหน้าตั้งค่า (Settings Sidebar) --- */
+        /* เมื่อเลือกแล้ว ให้พื้นหลังน้ำเงิน ตัวหนังสือ "สีขาว" */
+        #settingsModal .nav-pills .nav-link.active {
+            background-color: #0d6efd !important;
+            color: white !important; /* แก้จุดที่ตัวหนังสือหาย */
+            border-bottom: none;
+        }
+        #settingsModal .nav-pills .nav-link {
+            color: #555;
+            margin-bottom: 5px;
+            text-align: left;
+        }
+
+        /* --- 3. แก้ไข Dropdown (Select) --- */
+        /* บังคับให้ตัวหนังสือในช่องเลือกเป็นสีดำเสมอ */
+        select.form-select { color: #000 !important; }
+        /* บังคับตัวเลือกข้างในเป็นพื้นขาว ตัวหนังสือดำ */
         select option { background-color: white !important; color: black !important; }
         
         /* Table Styles */
         table.dataTable { width: 100% !important; }
-        table.dataTable thead th { white-space: nowrap; background-color: #f8f9fa; vertical-align: middle; }
+        table.dataTable thead th { 
+            white-space: nowrap; 
+            background-color: #e9ecef !important; /* สีเทาอ่อน */
+            color: #000 !important; /* ตัวหนังสือดำ */
+            vertical-align: middle; 
+            border-bottom: 2px solid #dee2e6;
+        }
         table.dataTable tbody td { vertical-align: middle; }
         
+        /* Link Style */
         a.doc-link { text-decoration: none; font-weight: bold; color: #0d6efd; }
         a.doc-link:hover { text-decoration: underline; color: #004085; }
+
+        /* Animation */
+        .section-container { display: none; }
+        .section-container.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -97,8 +132,7 @@
                 </div>
                 <div class="table-responsive">
                     <table id="editTable" class="table table-striped table-bordered w-100 table-sm display nowrap" style="width:100%">
-                        <thead class="table-dark">
-                            <tr>
+                        <thead class="table-light"> <tr>
                                 <th style="width: 50px;" class="text-center">แก้ไข</th>
                                 <th>เลขทะเบียน</th>
                                 <th>ความลับ</th>
@@ -253,49 +287,36 @@ function popDD(sel, items, blank=false) {
     if(items) items.forEach(i => d.append(`<option value="${i.value}">${i.label}</option>`));
 }
 
-// --- Table Logic (Unified Columns) ---
 function loadTable(sheet, mode) {
     const tid = mode==='view'?'#viewTable':'#editTable';
     if($.fn.DataTable.isDataTable(tid)) $(tid).DataTable().destroy();
     
-    // ฟังก์ชันสร้างลิงก์และปุ่ม
     const renderLink = (d, t, r) => (r['ลิงก์ไฟล์แนบ'] && r['ลิงก์ไฟล์แนบ'].includes('http')) ? `<a href="${r['ลิงก์ไฟล์แนบ']}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${d}</a>` : d;
     const renderBadge = d => d ? `<span class="badge bg-secondary">${d}</span>` : '-';
 
-    // 1. กำหนดคอลัมน์ข้อมูลมาตรฐาน (12 ช่อง)
+    // คอลัมน์มาตรฐาน 12 ช่อง
     const dataColumns = [
         { data: "เลขทะเบียนลงรับ", render: renderLink },
         { data: "ชั้นความลับ", render: renderBadge },
-        { data: "ชั้นความเร็ว" },
-        { data: "เลขที่หนังสือ" },
-        { data: "ลงวันที่" },
-        { data: "จาก" },
-        { data: "ถึง" },
-        { data: "ชื่อเรื่อง", className: "text-wrap", width: "300px" }, // ตัดคำอัตโนมัติ
-        { data: "ฝ่าย" },
-        { data: "ผู้ปฏิบัติ" },
-        { data: "วิธีการรับเอกสาร" },
-        { data: "หมายเหตุ" }
+        { data: "ชั้นความเร็ว" }, { data: "เลขที่หนังสือ" }, { data: "ลงวันที่" }, 
+        { data: "จาก" }, { data: "ถึง" }, { data: "ชื่อเรื่อง", className: "text-wrap", width: "300px" },
+        { data: "ฝ่าย" }, { data: "ผู้ปฏิบัติ" }, { data: "วิธีการรับเอกสาร" }, { data: "หมายเหตุ" }
     ];
 
     let cols = [];
     if(mode === 'view') {
-        // หน้าค้นหา: ใช้คอลัมน์มาตรฐานเลย
         cols = dataColumns;
     } else {
-        // หน้าแก้ไข: เพิ่มปุ่มแก้ไขข้างหน้าสุด + ตามด้วยข้อมูลครบทุกช่อง
+        // เพิ่มปุ่มแก้ไขข้างหน้า
         cols = [
-            { 
-                data: null, className: "text-center", width: "50px",
-                render:(d,t,r,m)=>`<button class="btn btn-warning btn-sm" onclick="openModal('edit',${m.row})"><i class="fas fa-pen"></i></button>` 
-            },
-            ...dataColumns // Spread Operator: เอาข้อมูลมาตรฐานมาต่อท้ายเลย
+            { data: null, className: "text-center", width: "50px", render:(d,t,r,m)=>`<button class="btn btn-warning btn-sm" onclick="openModal('edit',${m.row})"><i class="fas fa-pen"></i></button>` },
+            ...dataColumns
         ];
     }
 
     const dt = $(tid).DataTable({
         ajax: { url: "/api/data?sheet="+encodeURIComponent(sheet), dataSrc: j => { if(mode==='edit') allData=j; return j; } },
-        columns: cols, order: [[ mode==='view'?0:1, "desc" ]], // ถ้าหน้า edit ให้เรียงคอลัมน์ 1 (ทะเบียน) เพราะ 0 คือปุ่ม
+        columns: cols, order: [[ mode==='view'?0:1, "desc" ]],
         language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
         autoWidth: false, scrollX: true, destroy: true
     });
@@ -303,7 +324,6 @@ function loadTable(sheet, mode) {
     if(mode==='view') viewTable=dt; else editTable=dt;
 }
 
-// --- Settings & Forms ---
 function openSettings() { curCat='sheet'; renderSetTable(); renderSettingsNav(); new bootstrap.Modal('#settingsModal').show(); }
 function renderSettingsNav() { const n = $('#setNav'); n.empty(); Object.keys(cats).forEach(k => n.append(`<button class="nav-link ${k==='sheet'?'active':''}" onclick="switchCat('${k}')">${cats[k]}</button>`)); }
 function switchCat(c) { captureSet(); curCat=c; renderSetTable(); $('.nav-link').removeClass('active'); $(event.target).addClass('active'); }
