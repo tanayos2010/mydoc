@@ -33,35 +33,26 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link active" onclick="switchTab('search')"><i class="fas fa-search"></i> ค้นหาหนังสือ</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" onclick="switchTab('manage')"><i class="fas fa-edit"></i> จัดการข้อมูล</a>
-                </li>
+                <li class="nav-item"><a class="nav-link active" onclick="switchTab('search')"><i class="fas fa-search"></i> ค้นหาหนังสือ</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="switchTab('manage')"><i class="fas fa-edit"></i> จัดการข้อมูล</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <div class="container mt-4">
-
     <div id="searchSection" class="section-container active">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">รายการหนังสือทั้งหมด</h5>
                 <div class="d-flex gap-2 align-items-center">
                     <span>เลือกสมุด:</span>
-                    <select id="searchSheetSelect" class="form-select form-select-sm w-auto text-dark">
-                        <option value="" disabled selected>Loading...</option>
-                    </select>
+                    <select id="searchSheetSelect" class="form-select form-select-sm w-auto text-dark"><option>Loading...</option></select>
                 </div>
             </div>
             <div class="card-body">
                 <table id="viewTable" class="table table-hover table-bordered w-100 table-sm">
-                    <thead class="table-light">
-                        <tr><th>ทะเบียน</th><th>วันที่</th><th>เรื่อง</th><th>จาก</th><th>ถึง</th><th>สถานะ</th><th>เอกสาร</th></tr>
-                    </thead>
+                    <thead class="table-light"><tr><th>ทะเบียน</th><th>วันที่</th><th>เรื่อง</th><th>จาก</th><th>ถึง</th><th>สถานะ</th><th>เอกสาร</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -76,15 +67,11 @@
             </div>
             <div class="card-body">
                 <div class="mb-3 d-flex gap-2 align-items-center bg-light p-2 rounded">
-                    <label class="fw-bold">กำลังแก้ไขสมุด:</label>
-                    <select id="manageSheetSelect" class="form-select w-auto">
-                        <option value="" disabled selected>Loading...</option>
-                    </select>
+                    <label class="fw-bold">แก้ไขสมุด:</label>
+                    <select id="manageSheetSelect" class="form-select w-auto"><option>Loading...</option></select>
                 </div>
                 <table id="editTable" class="table table-striped table-bordered w-100 table-sm">
-                    <thead class="table-dark">
-                        <tr><th style="width: 50px;">แก้ไข</th><th>ทะเบียน</th><th>เรื่อง</th><th>วันที่</th><th>ผู้ปฏิบัติ</th></tr>
-                    </thead>
+                    <thead class="table-dark"><tr><th style="width: 50px;">แก้ไข</th><th>ทะเบียน</th><th>เรื่อง</th><th>วันที่</th><th>ผู้ปฏิบัติ</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -185,51 +172,52 @@
     let currentCategoryEdit = 'secret';
 
     $(document).ready(function() {
-        // 1. โหลดชื่อ Sheet สำหรับ Dropdown เลือกสมุด
-        loadSheetNames();
-        // 2. โหลด Settings สำหรับ Dropdown ในฟอร์ม
-        loadGlobalSettings();
+        // โหลดข้อมูลพร้อมกัน
+        Promise.all([loadGlobalSettings(), loadSheetNames()]).then(() => {
+            console.log("Initial data loaded");
+        });
 
-        // Events
         $('#searchSheetSelect').change(function() { loadTableData($(this).val(), 'view'); });
         $('#manageSheetSelect').change(function() { loadTableData($(this).val(), 'edit'); });
     });
 
-    // --- 1. Load Sheets ---
-    function loadSheetNames() {
-        fetch('/api/data?type=getSheetNames')
-            .then(res => res.json())
-            .then(sheets => {
-                const searchDD = $('#searchSheetSelect');
-                const manageDD = $('#manageSheetSelect');
-                const formDD = $('#formSheetSelect');
-                
-                searchDD.empty(); manageDD.empty(); formDD.empty();
-                
-                // เพิ่มตัวเลือก "ทั้งหมด" ในหน้าค้นหา
-                searchDD.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
+    // --- 1. Load Sheets (ดึงรายชื่อ Sheet อัตโนมัติ) ---
+    async function loadSheetNames() {
+        try {
+            const res = await fetch('/api/data?type=getSheetNames');
+            const sheets = await res.json();
+            
+            const searchDD = $('#searchSheetSelect');
+            const manageDD = $('#manageSheetSelect');
+            const formDD = $('#formSheetSelect');
+            
+            searchDD.empty(); manageDD.empty(); formDD.empty();
+            searchDD.append('<option value="All" style="font-weight:bold;">--- ค้นหาทั้งหมด ---</option>');
 
-                sheets.forEach(sheet => {
-                    searchDD.append(`<option value="${sheet}">${sheet}</option>`);
-                    manageDD.append(`<option value="${sheet}">${sheet}</option>`);
-                    formDD.append(`<option value="${sheet}">${sheet}</option>`);
+            if (sheets && sheets.length > 0) {
+                sheets.forEach(name => {
+                    const option = `<option value="${name}">${name}</option>`;
+                    searchDD.append(option);
+                    manageDD.append(option);
+                    formDD.append(option);
                 });
-
                 // โหลดข้อมูลเริ่มต้น
-                if(sheets.length > 0) {
-                    loadTableData("All", 'view'); // หน้าค้นหาให้ดูทั้งหมดก่อน
-                    loadTableData(sheets[0], 'edit'); // หน้าจัดการให้เลือกเล่มแรก
-                }
-            });
+                loadTableData("All", 'view');
+                loadTableData(sheets[0], 'edit');
+            } else {
+                searchDD.html('<option disabled>ไม่พบสมุดทะเบียน</option>');
+            }
+        } catch(e) { console.error(e); }
     }
 
-    // --- 2. Load Settings & Populate Form Dropdowns ---
+    // --- 2. Settings Logic ---
     async function loadGlobalSettings() {
         try {
-            const response = await fetch('/api/settings');
-            const data = await response.json();
+            const res = await fetch('/api/settings');
+            const data = await res.json();
             if(data && Object.keys(data).length > 0) globalSettings = data;
             
+            // Populate Dropdowns
             populateDropdown('#formSecret', globalSettings.secret, true);
             populateDropdown('#formSpeed', globalSettings.speed, true);
             populateDropdown('#formDept', globalSettings.dept, true);
@@ -245,7 +233,6 @@
         if (items) items.forEach(item => dropdown.append(`<option value="${item.value}">${item.label}</option>`));
     }
 
-    // --- 3. Settings Modal Logic ---
     function openSettingsModal() {
         currentCategoryEdit = 'secret';
         renderSettingTable('secret');
@@ -253,7 +240,6 @@
     }
 
     function switchSettingsCategory(cat) {
-        // จำค่าเก่า
         captureCurrentTableData();
         renderSettingTable(cat);
     }
@@ -271,9 +257,11 @@
         currentCategoryEdit = category;
         $('.nav-link').removeClass('active');
         $(`.nav-link[onclick="switchSettingsCategory('${category}')"]`).addClass('active');
-        
         const titles = { secret: 'ชั้นความลับ', speed: 'ชั้นความเร็ว', dept: 'ฝ่าย/แผนก', worker: 'ผู้ปฏิบัติ', method: 'วิธีรับ' };
         $('#settingCategoryTitle').text(titles[category]);
+
+        const thead = $('#settingsTable thead'); thead.empty();
+        thead.append('<tr><th>ชื่อข้อมูล</th><th style="width:50px">ลบ</th></tr>');
 
         const tbody = $('#settingsTable tbody'); tbody.empty();
         const items = globalSettings[category] || [];
@@ -281,10 +269,7 @@
     }
 
     function addSettingRow(value = '') {
-        const tr = `<tr>
-            <td><input type="text" class="form-control form-control-sm set-single-value" value="${value}" placeholder="ใส่ข้อมูล"></td>
-            <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
-        </tr>`;
+        const tr = `<tr><td><input type="text" class="form-control form-control-sm set-single-value" value="${value}" placeholder="ใส่ข้อมูล"></td><td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td></tr>`;
         $('#settingsTable tbody').append(tr);
     }
 
@@ -292,9 +277,11 @@
         captureCurrentTableData();
         let flatSettings = [];
         Object.keys(globalSettings).forEach(cat => {
-            globalSettings[cat].forEach(item => flatSettings.push([cat, item.label, item.value]));
+            // เราไม่สนใจ sheet ใน config แล้ว เพราะเราดึง Auto แทน
+            if(cat !== 'sheet') {
+                globalSettings[cat].forEach(item => flatSettings.push([cat, item.label, item.value]));
+            }
         });
-        
         Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()});
         fetch('/api/save-settings', {
             method:'POST', headers:{'Content-Type':'application/json'},
@@ -304,17 +291,17 @@
         });
     }
 
-    // --- 4. Tabs & Table Logic ---
+    // --- 3. Tabs & Table ---
     function switchTab(tabName) {
         $('.nav-link').removeClass('active');
         $('.section-container').removeClass('active');
         if(tabName === 'search') {
             $('#searchSection').addClass('active');
-            $('.nav-link:eq(0)').addClass('active'); // active tab 1
-            if(viewTable) viewTable.columns.adjust().draw(); 
+            $('.nav-link:eq(0)').addClass('active');
+            if(viewTable) viewTable.columns.adjust().draw();
         } else {
             $('#manageSection').addClass('active');
-            $('.nav-link:eq(1)').addClass('active'); // active tab 2
+            $('.nav-link:eq(1)').addClass('active');
             if(editTable) editTable.columns.adjust().draw();
         }
     }
@@ -324,44 +311,26 @@
         if ($.fn.DataTable.isDataTable(tableId)) $(tableId).DataTable().destroy();
 
         const columnsConfig = mode === 'view' 
-            ? [
-                { "data": "เลขทะเบียนลงรับ" },
-                { "data": "ลงวันที่" },
-                { "data": "ชื่อเรื่อง" },
-                { "data": "จาก" },
-                { "data": "ถึง" },
-                { "data": "ชั้นความลับ", "render": d => `<span class="badge bg-secondary">${d}</span>` },
-                { "data": "ลิงก์ไฟล์แนบ", "render": d => d ? `<a href="${d}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-pdf"></i></a>` : '-' }
-              ]
-            : [
-                { "data": null, "render": (d,t,r,m) => `<button class="btn btn-warning btn-sm" onclick="openModal('edit', ${m.row})"><i class="fas fa-edit"></i></button>` },
-                { "data": "เลขทะเบียนลงรับ" },
-                { "data": "ชื่อเรื่อง" },
-                { "data": "ลงวันที่" },
-                { "data": "ผู้ปฏิบัติ" }
-              ];
+            ? [ { "data": "เลขทะเบียนลงรับ" }, { "data": "ลงวันที่" }, { "data": "ชื่อเรื่อง" }, { "data": "จาก" }, { "data": "ถึง" }, { "data": "ชั้นความลับ", "render": d => `<span class="badge bg-secondary">${d}</span>` }, { "data": "ลิงก์ไฟล์แนบ", "render": d => d ? `<a href="${d}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-pdf"></i></a>` : '-' } ]
+            : [ { "data": null, "render": (d,t,r,m) => `<button class="btn btn-warning btn-sm" onclick="openModal('edit', ${m.row})"><i class="fas fa-edit"></i></button>` }, { "data": "เลขทะเบียนลงรับ" }, { "data": "ชื่อเรื่อง" }, { "data": "ลงวันที่" }, { "data": "ผู้ปฏิบัติ" } ];
 
         const dt = $(tableId).DataTable({
             "ajax": {
                 "url": "/api/data?sheet=" + encodeURIComponent(sheetName),
-                "dataSrc": function(json) {
-                    if(mode === 'edit') allData = json;
-                    return json;
-                }
+                "dataSrc": function(json) { if(mode === 'edit') allData = json; return json; }
             },
-            "columns": columnsConfig,
-            "order": [[ 1, "desc" ]],
+            "columns": columnsConfig, "order": [[ 1, "desc" ]],
             "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" }
         });
         if(mode === 'view') viewTable = dt; else editTable = dt;
     }
 
-    // --- 5. Add/Edit Logic ---
+    // --- 4. Modal Form ---
     function openModal(mode, rowIndex = null) {
         const modal = new bootstrap.Modal(document.getElementById('dataModal'));
         document.getElementById('docForm').reset();
         
-        // Auto select current sheet in manage view
+        // Auto select current sheet
         $('#formSheetSelect').val($('#manageSheetSelect').val());
 
         if (mode === 'add') {
@@ -375,21 +344,18 @@
             $('#formRowIndex').val(data.rowIndex);
             $('#formOldFileUrl').val(data['ลิงก์ไฟล์แนบ']);
             
-            // Populate Data
             if(data.sheetName) $('#formSheetSelect').val(data.sheetName);
             $('#formSecret').val(data['ชั้นความลับ']);
             $('#formSpeed').val(data['ชั้นความเร็ว']);
             $('#formDept').val(data['ฝ่าย']);
             $('#formWorker').val(data['ผู้ปฏิบัติ']);
             $('#formMethod').val(data['วิธีการรับเอกสาร']);
-            
             $('input[name="regNo"]').val(data['เลขทะเบียนลงรับ']);
             $('input[name="bookNo"]').val(data['เลขที่หนังสือ']);
             $('input[name="subject"]').val(data['ชื่อเรื่อง']);
             $('input[name="from"]').val(data['จาก']);
             $('input[name="to"]').val(data['ถึง']);
             $('input[name="remark"]').val(data['หมายเหตุ']);
-            
             if(data['ลงวันที่']) {
                 let d = data['ลงวันที่'];
                 if(d.includes('/')) { const p=d.split('/'); if(p.length===3) d=`${p[2]}-${p[1]}-${p[0]}`; }
