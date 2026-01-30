@@ -13,12 +13,28 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; font-size: 14px; }
         .nav-link { cursor: pointer; font-weight: bold; color: #555; }
         .nav-link.active { color: #0d6efd !important; border-bottom: 3px solid #0d6efd; }
+        
+        /* Animation */
         .section-container { display: none; }
         .section-container.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Fix Dropdown Color */
         select option { background-color: white !important; color: black !important; }
-        table.dataTable thead th { white-space: nowrap; background-color: #f8f9fa; vertical-align: middle; }
-        table.dataTable tbody td { vertical-align: middle; }
+        
+        /* Fix Table Layout (สำคัญมาก) */
+        table.dataTable { width: 100% !important; } /* บังคับตารางกว้างเต็ม 100% เสมอ */
+        table.dataTable thead th { 
+            white-space: nowrap; /* ห้ามหัวตารางตัดคำ */
+            background-color: #f8f9fa; 
+            vertical-align: middle; 
+        }
+        table.dataTable tbody td { 
+            vertical-align: middle; 
+            white-space: nowrap; /* ห้ามเนื้อหาตัดคำ (ให้เลื่อน scroll เอา) */
+        }
+        
+        /* Link Style */
         a.doc-link { text-decoration: none; font-weight: bold; color: #0d6efd; }
         a.doc-link:hover { text-decoration: underline; color: #004085; }
     </style>
@@ -55,7 +71,7 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table id="viewTable" class="table table-hover table-bordered w-100 table-sm">
+                    <table id="viewTable" class="table table-hover table-bordered w-100 table-sm display nowrap">
                         <thead class="table-light">
                             <tr>
                                 <th>เลขทะเบียน</th>
@@ -82,15 +98,10 @@
     <div id="manageSection" class="section-container">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-user-shield"></i> จัดการข้อมูล (ผู้ดูแลระบบ)</h5>
-                
+                <h5 class="mb-0"><i class="fas fa-user-shield"></i> จัดการข้อมูล</h5>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-dark btn-sm" onclick="openSettings()">
-                        <i class="fas fa-cog"></i> ตั้งค่าตัวเลือก
-                    </button>
-                    <button class="btn btn-success btn-sm" onclick="openModal('add')">
-                        <i class="fas fa-plus-circle"></i> ลงรับใหม่
-                    </button>
+                    <button class="btn btn-dark btn-sm" onclick="openSettings()"><i class="fas fa-cog"></i> ตั้งค่าตัวเลือก</button>
+                    <button class="btn btn-success btn-sm" onclick="openModal('add')"><i class="fas fa-plus-circle"></i> ลงรับใหม่</button>
                 </div>
             </div>
             <div class="card-body">
@@ -99,14 +110,14 @@
                     <select id="manageSheet" class="form-select w-auto"><option>Loading...</option></select>
                 </div>
                 <div class="table-responsive">
-                    <table id="editTable" class="table table-striped table-bordered w-100 table-sm">
+                    <table id="editTable" class="table table-striped table-bordered w-100 table-sm display nowrap" style="width:100%">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width: 60px;" class="text-center">แก้ไข</th>
-                                <th style="min-width: 150px;">เลขทะเบียน</th>
-                                <th style="min-width: 200px;">เรื่อง</th>
-                                <th style="min-width: 100px;">ลงวันที่</th>
-                                <th style="min-width: 100px;">ผู้ปฏิบัติ</th>
+                                <th style="width: 50px;" class="text-center">แก้ไข</th>
+                                <th style="width: 120px;">เลขทะเบียน</th>
+                                <th>เรื่อง</th>
+                                <th style="width: 100px;">ลงวันที่</th>
+                                <th style="width: 150px;">ผู้ปฏิบัติ</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -121,7 +132,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title"><i class="fas fa-cogs"></i> ตั้งค่าตัวเลือก</h5>
+                <h5 class="modal-title">ตั้งค่าตัวเลือก</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -142,7 +153,7 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer"><button class="btn btn-primary" onclick="saveSettings()">บันทึกการตั้งค่า</button></div>
+            <div class="modal-footer"><button class="btn btn-primary" onclick="saveSettings()">บันทึก</button></div>
         </div>
     </div>
 </div>
@@ -159,7 +170,6 @@
                     <input type="hidden" name="action" id="fAction">
                     <input type="hidden" name="rowIndex" id="fRowIndex">
                     <input type="hidden" name="oldFileUrl" id="fOldUrl">
-                    
                     <div class="mb-3">
                         <label class="fw-bold text-danger">บันทึกลงสมุด:</label>
                         <select name="sheetName" id="fSheet" class="form-select bg-light" required></select>
@@ -169,12 +179,10 @@
                         <div class="col-md-3"><label>วันที่</label><input type="date" name="date" class="form-control"></div>
                         <div class="col-md-3"><label>ความลับ</label><select name="secretLevel" id="fSecret" class="form-select"></select></div>
                         <div class="col-md-3"><label>ความเร็ว</label><select name="speedLevel" id="fSpeed" class="form-select"></select></div>
-                        
                         <div class="col-md-4"><label>เลขที่หนังสือ</label><input type="text" name="bookNo" class="form-control"></div>
                         <div class="col-md-4"><label>จาก</label><input type="text" name="from" class="form-control"></div>
                         <div class="col-md-4"><label>ถึง</label><input type="text" name="to" class="form-control"></div>
                         <div class="col-12"><label>เรื่อง</label><input type="text" name="subject" class="form-control" required></div>
-                        
                         <div class="col-md-4"><label>ฝ่าย</label><select name="dept" id="fDept" class="form-select"></select></div>
                         <div class="col-md-4"><label>ผู้ปฏิบัติ</label><select name="worker" id="fWorker" class="form-select"></select></div>
                         <div class="col-md-4"><label>วิธีรับ</label><select name="method" id="fMethod" class="form-select"></select></div>
@@ -196,14 +204,13 @@
 
 <script>
 // ============================================
-// 🔒 ตั้งรหัสผ่าน Admin ที่นี่ครับ
+// 🔒 รหัสผ่าน Admin
 // ============================================
 const ADMIN_PASSWORD = "1234"; 
-// ============================================
 
 let viewTable, editTable;
 let allData=[], globalSet={}, autoSheets=[], curCat='sheet';
-let isLoggedIn = false; // ตัวแปรเช็คสถานะล็อกอิน
+let isLoggedIn = false;
 const cats = { sheet:'สมุดทะเบียน', secret:'ชั้นความลับ', speed:'ชั้นความเร็ว', dept:'ฝ่าย', worker:'ผู้ปฏิบัติ', method:'วิธีรับ' };
 
 $(document).ready(function() {
@@ -221,58 +228,31 @@ $(document).ready(function() {
     $('#manageSheet').change(function(){ loadTable($(this).val(), 'edit') });
 });
 
-// --- Auth & Tab Switching ---
+// --- Auth & Tabs ---
 function checkAuthAndSwitch() {
-    // ถ้าล็อกอินแล้ว ให้เข้าเลย
-    if(isLoggedIn) {
-        switchTab('manage');
-        return;
-    }
-
-    // ถ้ายังไม่ล็อกอิน ให้ถามรหัส
+    if(isLoggedIn) { switchTab('manage'); return; }
     Swal.fire({
-        title: 'กรุณาใส่รหัสผ่าน Admin',
-        input: 'password',
-        inputAttributes: { autocapitalize: 'off' },
-        showCancelButton: true,
-        confirmButtonText: 'เข้าสู่ระบบ',
-        cancelButtonText: 'ยกเลิก',
-        showLoaderOnConfirm: true,
-        preConfirm: (password) => {
-            if (password === ADMIN_PASSWORD) {
-                return true;
-            } else {
-                Swal.showValidationMessage('รหัสผ่านไม่ถูกต้อง');
-            }
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
+        title: 'Admin Password', input: 'password', showCancelButton: true, confirmButtonText: 'Login',
+        preConfirm: (pass) => { if(pass !== ADMIN_PASSWORD) Swal.showValidationMessage('Wrong password'); return true; }
+    }).then((res) => {
+        if(res.isConfirmed) {
             isLoggedIn = true;
             switchTab('manage');
-            Swal.fire({
-                icon: 'success',
-                title: 'เข้าสู่ระบบสำเร็จ',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 1500
-            });
+            Swal.fire({icon:'success', title:'Login Success', toast:true, position:'top-end', showConfirmButton:false, timer:1500});
         }
     });
 }
 
 function switchTab(t) {
-    $('.section-container').removeClass('active'); 
-    $('.nav-link').removeClass('active');
-    
+    $('.section-container').removeClass('active'); $('.nav-link').removeClass('active');
     if(t==='search') { 
-        $('#searchSection').addClass('active'); 
-        $('.nav-link:eq(0)').addClass('active'); // Tab Search Active
-        if(viewTable) viewTable.columns.adjust().draw(); 
+        $('#searchSection').addClass('active'); $('.nav-link:eq(0)').addClass('active'); 
+        // **แก้บั๊กตาราง**: รอให้แท็บแสดงเสร็จก่อนค่อยจัดระเบียบตาราง
+        if(viewTable) setTimeout(() => viewTable.columns.adjust().draw(), 200); 
     } else { 
-        $('#manageSection').addClass('active'); 
-        $('.nav-link:eq(1)').addClass('active'); // Tab Manage Active
-        if(editTable) editTable.columns.adjust().draw(); 
+        $('#manageSection').addClass('active'); $('.nav-link:eq(1)').addClass('active'); 
+        // **แก้บั๊กตาราง**: รอให้แท็บแสดงเสร็จก่อนค่อยจัดระเบียบตาราง (สำคัญมาก!)
+        if(editTable) setTimeout(() => editTable.columns.adjust().draw(), 200);
     }
 }
 
@@ -280,7 +260,6 @@ function switchTab(t) {
 function initMainDropdowns() {
     const sDD = $('#searchSheet'), mDD = $('#manageSheet'), fDD = $('#fSheet');
     sDD.empty(); mDD.empty(); fDD.empty();
-    
     sDD.append('<option value="All" class="fw-bold" style="color:blue;">--- ค้นหาทั้งหมด ---</option>');
     
     let hasSheet = false;
@@ -294,7 +273,6 @@ function initMainDropdowns() {
         const noData = '<option disabled>กรุณาเพิ่มสมุดที่ปุ่มตั้งค่า</option>';
         sDD.append(noData); mDD.append(noData); fDD.append(noData);
     }
-
     ['secret','speed','dept','worker','method'].forEach(k => popDD('#f'+k.charAt(0).toUpperCase()+k.slice(1), globalSet[k], true));
 
     if(hasSheet) {
@@ -302,7 +280,6 @@ function initMainDropdowns() {
         loadTable(globalSet.sheet[0].value, 'edit');
     }
 }
-
 function popDD(sel, items, blank=false) {
     const d = $(sel); d.empty();
     if(blank) d.append('<option value="">-</option>');
@@ -324,29 +301,17 @@ function loadTable(sheet, mode) {
     let cols = [];
     if(mode === 'view') {
         cols = [
-            { data: "เลขทะเบียนลงรับ", render: renderLink },
-            { data: "ชั้นความลับ", render: d => d ? `<span class="badge bg-secondary">${d}</span>` : '-' },
-            { data: "ชั้นความเร็ว" },
-            { data: "เลขที่หนังสือ" },
-            { data: "ลงวันที่" },
-            { data: "จาก" },
-            { data: "ถึง" },
-            { data: "ชื่อเรื่อง" },
-            { data: "ฝ่าย" },
-            { data: "ผู้ปฏิบัติ" },
-            { data: "วิธีการรับเอกสาร" },
-            { data: "หมายเหตุ" }
+            { data: "เลขทะเบียนลงรับ", render: renderLink }, { data: "ชั้นความลับ", render: d=>d?`<span class="badge bg-secondary">${d}</span>`:'-' },
+            { data: "ชั้นความเร็ว" }, { data: "เลขที่หนังสือ" }, { data: "ลงวันที่" }, { data: "จาก" }, { data: "ถึง" }, { data: "ชื่อเรื่อง" }, { data: "ฝ่าย" }, { data: "ผู้ปฏิบัติ" }, { data: "วิธีการรับเอกสาร" }, { data: "หมายเหตุ" }
         ];
     } else {
+        // **หน้าแก้ไข (Edit)**
         cols = [
-            { 
-                data: null, className: "text-center", width: "50px",
-                render:(d,t,r,m)=>`<button class="btn btn-warning btn-sm" onclick="openModal('edit',${m.row})"><i class="fas fa-pen"></i></button>` 
-            },
-            { data: "เลขทะเบียนลงรับ", render: renderLink },
-            { data: "ชื่อเรื่อง" },
-            { data: "ลงวันที่", className: "text-center" },
-            { data: "ผู้ปฏิบัติ" }
+            { data: null, className: "text-center", width: "50px", render:(d,t,r,m)=>`<button class="btn btn-warning btn-sm" onclick="openModal('edit',${m.row})"><i class="fas fa-pen"></i></button>` },
+            { data: "เลขทะเบียนลงรับ", width: "120px", render: renderLink },
+            { data: "ชื่อเรื่อง" }, // ให้ชื่อเรื่องยืดหยุ่น (Auto width)
+            { data: "ลงวันที่", className: "text-center", width: "100px" },
+            { data: "ผู้ปฏิบัติ", width: "150px" }
         ];
     }
 
@@ -354,47 +319,34 @@ function loadTable(sheet, mode) {
         ajax: { url: "/api/data?sheet="+encodeURIComponent(sheet), dataSrc: j => { if(mode==='edit') allData=j; return j; } },
         columns: cols, order: [[ 1, "desc" ]],
         language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
-        autoWidth: false, scrollX: true, destroy: true
+        autoWidth: false, // ปิด auto width เพื่อให้เราคุมเองได้
+        scrollX: true,    // เปิด scroll แนวนอน
+        destroy: true
     });
     
     if(mode==='view') viewTable=dt; else editTable=dt;
 }
 
-// --- Settings Logic ---
+// --- Settings & Forms ---
 function openSettings() { curCat='sheet'; renderSetTable(); renderSettingsNav(); new bootstrap.Modal('#settingsModal').show(); }
-
-function renderSettingsNav() {
-    const n = $('#setNav'); n.empty();
-    Object.keys(cats).forEach(k => n.append(`<button class="nav-link ${k==='sheet'?'active':''}" onclick="switchCat('${k}')">${cats[k]}</button>`));
-}
-
+function renderSettingsNav() { const n = $('#setNav'); n.empty(); Object.keys(cats).forEach(k => n.append(`<button class="nav-link ${k==='sheet'?'active':''}" onclick="switchCat('${k}')">${cats[k]}</button>`)); }
 function switchCat(c) { captureSet(); curCat=c; renderSetTable(); $('.nav-link').removeClass('active'); $(event.target).addClass('active'); }
-
 function captureSet() {
     const arr = [];
     $('#setTable tbody tr').each(function() {
-        if(curCat==='sheet') {
-            arr.push({label:$(this).find('.l').val(), value:$(this).find('.v').val()});
-        } else { 
-            const v=$(this).find('.v').val(); arr.push({label:v, value:v}); 
-        }
+        if(curCat==='sheet') arr.push({label:$(this).find('.l').val(), value:$(this).find('.v').val()});
+        else { const v=$(this).find('.v').val(); arr.push({label:v, value:v}); }
     });
     globalSet[curCat] = arr;
 }
-
 function renderSetTable() {
     $('#catTitle').text(cats[curCat]);
-    const h = $('#setTable thead'); h.empty();
-    const b = $('#setTable tbody'); b.empty();
-    
+    const h = $('#setTable thead'); h.empty(); const b = $('#setTable tbody'); b.empty();
     if(curCat === 'sheet') $('#sheetHelp').removeClass('d-none'); else $('#sheetHelp').addClass('d-none');
-
     if(curCat==='sheet') h.append('<tr><th>ชื่อที่แสดง (เช่น ปี 67)</th><th>เลือกสมุดจริง (Google Sheet)</th><th width="50">ลบ</th></tr>');
     else h.append('<tr><th>ข้อมูล</th><th width="50">ลบ</th></tr>');
-
     (globalSet[curCat]||[]).forEach(i => addSetRow(i.label, i.value));
 }
-
 function addSetRow(l='', v='') {
     let tr = '';
     if(curCat==='sheet') {
@@ -404,53 +356,35 @@ function addSetRow(l='', v='') {
             opts += `<option value="${sName}" ${selected}>${sName}</option>`;
         });
         if(v && !autoSheets.includes(v)) opts += `<option value="${v}" selected>${v} (ไม่พบ)</option>`;
-
         tr = `<tr><td><input class="form-control l" value="${l}" placeholder="ชื่อสมุด"></td><td><select class="form-select v">${opts}</select></td><td><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()">X</button></td></tr>`;
     } else {
         tr = `<tr><td><input class="form-control v" value="${l}"></td><td><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()">X</button></td></tr>`;
     }
     $('#setTable tbody').append(tr);
 }
-
 function saveSettings() {
-    captureSet();
-    let flat = [];
-    Object.keys(globalSet).forEach(k => globalSet[k].forEach(i => flat.push([k, i.label, i.value])));
-    
+    captureSet(); let flat = []; Object.keys(globalSet).forEach(k => globalSet[k].forEach(i => flat.push([k, i.label, i.value])));
     Swal.fire({title:'บันทึก...', didOpen:()=>Swal.showLoading()});
-    fetch('/api/save-settings', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({settings:flat})
-    }).then(()=> location.reload());
+    fetch('/api/save-settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({settings:flat})}).then(()=> location.reload());
 }
-
-// --- Tabs & Form ---
 function openModal(mode, idx) {
-    $('#docForm')[0].reset();
-    $('#fSheet').val($('#manageSheet').val());
-    if(mode==='add') { 
-        $('#modalTitle').text('เพิ่ม'); $('#fAction').val('add'); 
-        $('input[name="date"]').val(new Date().toISOString().split('T')[0]);
-    } else {
+    $('#docForm')[0].reset(); $('#fSheet').val($('#manageSheet').val());
+    if(mode==='add') { $('#modalTitle').text('เพิ่ม'); $('#fAction').val('add'); $('input[name="date"]').val(new Date().toISOString().split('T')[0]); }
+    else {
         const d = allData[idx];
         $('#modalTitle').text('แก้ไข'); $('#fAction').val('edit'); $('#fRowIndex').val(d.rowIndex); $('#fOldUrl').val(d['ลิงก์ไฟล์แนบ']);
         if(d.sheetName) $('#fSheet').val(d.sheetName);
-        $('#fSecret').val(d['ชั้นความลับ']); $('#fSpeed').val(d['ชั้นความเร็ว']); $('#fDept').val(d['ฝ่าย']);
-        $('#fWorker').val(d['ผู้ปฏิบัติ']); $('#fMethod').val(d['วิธีการรับเอกสาร']);
+        $('#fSecret').val(d['ชั้นความลับ']); $('#fSpeed').val(d['ชั้นความเร็ว']); $('#fDept').val(d['ฝ่าย']); $('#fWorker').val(d['ผู้ปฏิบัติ']); $('#fMethod').val(d['วิธีการรับเอกสาร']);
         $('input[name="regNo"]').val(d['เลขทะเบียนลงรับ']); $('input[name="bookNo"]').val(d['เลขที่หนังสือ']);
         $('input[name="subject"]').val(d['ชื่อเรื่อง']); $('input[name="from"]').val(d['จาก']); $('input[name="to"]').val(d['ถึง']); $('input[name="remark"]').val(d['หมายเหตุ']);
         if(d['ลงวันที่']) { const p=d['ลงวันที่'].split('/'); if(p.length===3) $('input[name="date"]').val(`${p[2]}-${p[1]}-${p[0]}`); }
     }
     new bootstrap.Modal('#dataModal').show();
 }
-
 function submitForm() {
-    const fd = new FormData($('#docForm')[0]);
-    Swal.fire({title:'บันทึก...', didOpen:()=>Swal.showLoading()});
+    const fd = new FormData($('#docForm')[0]); Swal.fire({title:'บันทึก...', didOpen:()=>Swal.showLoading()});
     fetch('/submit', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{
-        if(d.status==='success') Swal.fire('สำเร็จ','','success').then(()=>{
-            bootstrap.Modal.getInstance(document.getElementById('dataModal')).hide();
-            loadTable($('#fSheet').val(), 'edit');
-        });
+        if(d.status==='success') Swal.fire('สำเร็จ','','success').then(()=>{ bootstrap.Modal.getInstance(document.getElementById('dataModal')).hide(); loadTable($('#fSheet').val(), 'edit'); });
         else Swal.fire('Err', d.message, 'error');
     });
 }
