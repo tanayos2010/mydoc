@@ -13,28 +13,16 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; font-size: 14px; }
         .nav-link { cursor: pointer; font-weight: bold; color: #555; }
         .nav-link.active { color: #0d6efd !important; border-bottom: 3px solid #0d6efd; }
-        
-        /* Animation */
         .section-container { display: none; }
         .section-container.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        /* Fix Dropdown Color */
         select option { background-color: white !important; color: black !important; }
         
-        /* Fix Table Layout (สำคัญมาก) */
-        table.dataTable { width: 100% !important; } /* บังคับตารางกว้างเต็ม 100% เสมอ */
-        table.dataTable thead th { 
-            white-space: nowrap; /* ห้ามหัวตารางตัดคำ */
-            background-color: #f8f9fa; 
-            vertical-align: middle; 
-        }
-        table.dataTable tbody td { 
-            vertical-align: middle; 
-            white-space: nowrap; /* ห้ามเนื้อหาตัดคำ (ให้เลื่อน scroll เอา) */
-        }
+        /* บังคับตารางให้กว้างเต็ม และจัดแนวตั้งกึ่งกลาง */
+        table.dataTable { width: 100% !important; }
+        table.dataTable thead th { white-space: nowrap; background-color: #f8f9fa; vertical-align: middle; }
+        table.dataTable tbody td { vertical-align: middle; }
         
-        /* Link Style */
         a.doc-link { text-decoration: none; font-weight: bold; color: #0d6efd; }
         a.doc-link:hover { text-decoration: underline; color: #004085; }
     </style>
@@ -64,9 +52,7 @@
                 <h5 class="mb-0">รายการหนังสือทั้งหมด</h5>
                 <div class="d-flex gap-2 align-items-center">
                     <span>เลือกสมุด:</span>
-                    <select id="searchSheet" class="form-select form-select-sm w-auto fw-bold text-dark">
-                        <option>Loading...</option>
-                    </select>
+                    <select id="searchSheet" class="form-select form-select-sm w-auto fw-bold text-dark"><option>Loading...</option></select>
                 </div>
             </div>
             <div class="card-body">
@@ -115,8 +101,7 @@
                             <tr>
                                 <th style="width: 50px;" class="text-center">แก้ไข</th>
                                 <th style="width: 120px;">เลขทะเบียน</th>
-                                <th>เรื่อง</th>
-                                <th style="width: 100px;">ลงวันที่</th>
+                                <th style="min-width: 400px;">เรื่อง (Subject)</th> <th style="width: 100px;">ลงวันที่</th>
                                 <th style="width: 150px;">ผู้ปฏิบัติ</th>
                             </tr>
                         </thead>
@@ -142,13 +127,8 @@
                     </div>
                     <div class="col-md-9">
                         <h6 id="catTitle" class="fw-bold text-primary mb-3"></h6>
-                        <div id="sheetHelp" class="alert alert-info py-1 small d-none">
-                            <i class="fas fa-info-circle"></i> เลือก Sheet จริงจาก Google Sheet เพื่อจับคู่กับชื่อที่แสดง
-                        </div>
-                        <table class="table table-bordered table-sm" id="setTable">
-                            <thead class="table-light"></thead>
-                            <tbody></tbody>
-                        </table>
+                        <div id="sheetHelp" class="alert alert-info py-1 small d-none"><i class="fas fa-info-circle"></i> เลือก Sheet จริงจาก Google</div>
+                        <table class="table table-bordered table-sm" id="setTable"><thead class="table-light"></thead><tbody></tbody></table>
                         <button class="btn btn-sm btn-success w-100" onclick="addSetRow()">+ เพิ่มรายการใหม่</button>
                     </div>
                 </div>
@@ -203,11 +183,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// ============================================
-// 🔒 รหัสผ่าน Admin
-// ============================================
 const ADMIN_PASSWORD = "1234"; 
-
 let viewTable, editTable;
 let allData=[], globalSet={}, autoSheets=[], curCat='sheet';
 let isLoggedIn = false;
@@ -228,18 +204,13 @@ $(document).ready(function() {
     $('#manageSheet').change(function(){ loadTable($(this).val(), 'edit') });
 });
 
-// --- Auth & Tabs ---
 function checkAuthAndSwitch() {
     if(isLoggedIn) { switchTab('manage'); return; }
     Swal.fire({
         title: 'Admin Password', input: 'password', showCancelButton: true, confirmButtonText: 'Login',
         preConfirm: (pass) => { if(pass !== ADMIN_PASSWORD) Swal.showValidationMessage('Wrong password'); return true; }
     }).then((res) => {
-        if(res.isConfirmed) {
-            isLoggedIn = true;
-            switchTab('manage');
-            Swal.fire({icon:'success', title:'Login Success', toast:true, position:'top-end', showConfirmButton:false, timer:1500});
-        }
+        if(res.isConfirmed) { isLoggedIn = true; switchTab('manage'); Swal.fire({icon:'success', title:'Success', toast:true, position:'top-end', showConfirmButton:false, timer:1000}); }
     });
 }
 
@@ -247,42 +218,29 @@ function switchTab(t) {
     $('.section-container').removeClass('active'); $('.nav-link').removeClass('active');
     if(t==='search') { 
         $('#searchSection').addClass('active'); $('.nav-link:eq(0)').addClass('active'); 
-        // **แก้บั๊กตาราง**: รอให้แท็บแสดงเสร็จก่อนค่อยจัดระเบียบตาราง
         if(viewTable) setTimeout(() => viewTable.columns.adjust().draw(), 200); 
     } else { 
         $('#manageSection').addClass('active'); $('.nav-link:eq(1)').addClass('active'); 
-        // **แก้บั๊กตาราง**: รอให้แท็บแสดงเสร็จก่อนค่อยจัดระเบียบตาราง (สำคัญมาก!)
         if(editTable) setTimeout(() => editTable.columns.adjust().draw(), 200);
     }
 }
 
-// --- Dropdowns ---
 function initMainDropdowns() {
     const sDD = $('#searchSheet'), mDD = $('#manageSheet'), fDD = $('#fSheet');
     sDD.empty(); mDD.empty(); fDD.empty();
     sDD.append('<option value="All" class="fw-bold" style="color:blue;">--- ค้นหาทั้งหมด ---</option>');
-    
     let hasSheet = false;
     if(globalSet.sheet && globalSet.sheet.length > 0) {
-        globalSet.sheet.forEach(s => {
-            const h = `<option value="${s.value}">${s.label}</option>`;
-            sDD.append(h); mDD.append(h); fDD.append(h);
-        });
+        globalSet.sheet.forEach(s => { const h = `<option value="${s.value}">${s.label}</option>`; sDD.append(h); mDD.append(h); fDD.append(h); });
         hasSheet = true;
     } else {
-        const noData = '<option disabled>กรุณาเพิ่มสมุดที่ปุ่มตั้งค่า</option>';
-        sDD.append(noData); mDD.append(noData); fDD.append(noData);
+        const noData = '<option disabled>กรุณาเพิ่มสมุดที่ปุ่มตั้งค่า</option>'; sDD.append(noData); mDD.append(noData); fDD.append(noData);
     }
     ['secret','speed','dept','worker','method'].forEach(k => popDD('#f'+k.charAt(0).toUpperCase()+k.slice(1), globalSet[k], true));
-
-    if(hasSheet) {
-        loadTable('All', 'view');
-        loadTable(globalSet.sheet[0].value, 'edit');
-    }
+    if(hasSheet) { loadTable('All', 'view'); loadTable(globalSet.sheet[0].value, 'edit'); }
 }
 function popDD(sel, items, blank=false) {
-    const d = $(sel); d.empty();
-    if(blank) d.append('<option value="">-</option>');
+    const d = $(sel); d.empty(); if(blank) d.append('<option value="">-</option>');
     if(items) items.forEach(i => d.append(`<option value="${i.value}">${i.label}</option>`));
 }
 
@@ -291,6 +249,7 @@ function loadTable(sheet, mode) {
     const tid = mode==='view'?'#viewTable':'#editTable';
     if($.fn.DataTable.isDataTable(tid)) $(tid).DataTable().destroy();
     
+    // ฟังก์ชันสร้างลิงก์ (ใช้ร่วมกันทั้ง 2 ตาราง)
     const renderLink = (data, type, row) => {
         if(row['ลิงก์ไฟล์แนบ'] && row['ลิงก์ไฟล์แนบ'].includes('http')) {
             return `<a href="${row['ลิงก์ไฟล์แนบ']}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${data}</a>`;
@@ -301,15 +260,16 @@ function loadTable(sheet, mode) {
     let cols = [];
     if(mode === 'view') {
         cols = [
-            { data: "เลขทะเบียนลงรับ", render: renderLink }, { data: "ชั้นความลับ", render: d=>d?`<span class="badge bg-secondary">${d}</span>`:'-' },
+            { data: "เลขทะเบียนลงรับ", render: renderLink },
+            { data: "ชั้นความลับ", render: d=>d?`<span class="badge bg-secondary">${d}</span>`:'-' },
             { data: "ชั้นความเร็ว" }, { data: "เลขที่หนังสือ" }, { data: "ลงวันที่" }, { data: "จาก" }, { data: "ถึง" }, { data: "ชื่อเรื่อง" }, { data: "ฝ่าย" }, { data: "ผู้ปฏิบัติ" }, { data: "วิธีการรับเอกสาร" }, { data: "หมายเหตุ" }
         ];
     } else {
-        // **หน้าแก้ไข (Edit)**
+        // --- ส่วนแก้ไข: เพิ่มลิงก์ และ กำหนดความกว้าง ---
         cols = [
             { data: null, className: "text-center", width: "50px", render:(d,t,r,m)=>`<button class="btn btn-warning btn-sm" onclick="openModal('edit',${m.row})"><i class="fas fa-pen"></i></button>` },
-            { data: "เลขทะเบียนลงรับ", width: "120px", render: renderLink },
-            { data: "ชื่อเรื่อง" }, // ให้ชื่อเรื่องยืดหยุ่น (Auto width)
+            { data: "เลขทะเบียนลงรับ", width: "120px", render: renderLink }, // ใส่ลิงก์ให้ตรงนี้ด้วย
+            { data: "ชื่อเรื่อง", className: "text-wrap", width: "400px" }, // บังคับตัดคำและกว้าง 400px
             { data: "ลงวันที่", className: "text-center", width: "100px" },
             { data: "ผู้ปฏิบัติ", width: "150px" }
         ];
@@ -319,9 +279,7 @@ function loadTable(sheet, mode) {
         ajax: { url: "/api/data?sheet="+encodeURIComponent(sheet), dataSrc: j => { if(mode==='edit') allData=j; return j; } },
         columns: cols, order: [[ 1, "desc" ]],
         language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
-        autoWidth: false, // ปิด auto width เพื่อให้เราคุมเองได้
-        scrollX: true,    // เปิด scroll แนวนอน
-        destroy: true
+        autoWidth: false, scrollX: true, destroy: true
     });
     
     if(mode==='view') viewTable=dt; else editTable=dt;
@@ -332,34 +290,23 @@ function openSettings() { curCat='sheet'; renderSetTable(); renderSettingsNav();
 function renderSettingsNav() { const n = $('#setNav'); n.empty(); Object.keys(cats).forEach(k => n.append(`<button class="nav-link ${k==='sheet'?'active':''}" onclick="switchCat('${k}')">${cats[k]}</button>`)); }
 function switchCat(c) { captureSet(); curCat=c; renderSetTable(); $('.nav-link').removeClass('active'); $(event.target).addClass('active'); }
 function captureSet() {
-    const arr = [];
-    $('#setTable tbody tr').each(function() {
-        if(curCat==='sheet') arr.push({label:$(this).find('.l').val(), value:$(this).find('.v').val()});
-        else { const v=$(this).find('.v').val(); arr.push({label:v, value:v}); }
-    });
+    const arr = []; $('#setTable tbody tr').each(function() { if(curCat==='sheet') arr.push({label:$(this).find('.l').val(), value:$(this).find('.v').val()}); else { const v=$(this).find('.v').val(); arr.push({label:v, value:v}); } });
     globalSet[curCat] = arr;
 }
 function renderSetTable() {
-    $('#catTitle').text(cats[curCat]);
-    const h = $('#setTable thead'); h.empty(); const b = $('#setTable tbody'); b.empty();
+    $('#catTitle').text(cats[curCat]); const h = $('#setTable thead'); h.empty(); const b = $('#setTable tbody'); b.empty();
     if(curCat === 'sheet') $('#sheetHelp').removeClass('d-none'); else $('#sheetHelp').addClass('d-none');
-    if(curCat==='sheet') h.append('<tr><th>ชื่อที่แสดง (เช่น ปี 67)</th><th>เลือกสมุดจริง (Google Sheet)</th><th width="50">ลบ</th></tr>');
-    else h.append('<tr><th>ข้อมูล</th><th width="50">ลบ</th></tr>');
+    if(curCat==='sheet') h.append('<tr><th>ชื่อที่แสดง (เช่น ปี 67)</th><th>เลือกสมุดจริง (Google Sheet)</th><th width="50">ลบ</th></tr>'); else h.append('<tr><th>ข้อมูล</th><th width="50">ลบ</th></tr>');
     (globalSet[curCat]||[]).forEach(i => addSetRow(i.label, i.value));
 }
 function addSetRow(l='', v='') {
     let tr = '';
     if(curCat==='sheet') {
         let opts = `<option value="" disabled ${v===''?'selected':''}>-- เลือก Sheet --</option>`;
-        autoSheets.forEach(sName => {
-            const selected = sName === v ? 'selected' : '';
-            opts += `<option value="${sName}" ${selected}>${sName}</option>`;
-        });
+        autoSheets.forEach(sName => { const selected = sName === v ? 'selected' : ''; opts += `<option value="${sName}" ${selected}>${sName}</option>`; });
         if(v && !autoSheets.includes(v)) opts += `<option value="${v}" selected>${v} (ไม่พบ)</option>`;
         tr = `<tr><td><input class="form-control l" value="${l}" placeholder="ชื่อสมุด"></td><td><select class="form-select v">${opts}</select></td><td><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()">X</button></td></tr>`;
-    } else {
-        tr = `<tr><td><input class="form-control v" value="${l}"></td><td><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()">X</button></td></tr>`;
-    }
+    } else { tr = `<tr><td><input class="form-control v" value="${l}"></td><td><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()">X</button></td></tr>`; }
     $('#setTable tbody').append(tr);
 }
 function saveSettings() {
@@ -371,8 +318,7 @@ function openModal(mode, idx) {
     $('#docForm')[0].reset(); $('#fSheet').val($('#manageSheet').val());
     if(mode==='add') { $('#modalTitle').text('เพิ่ม'); $('#fAction').val('add'); $('input[name="date"]').val(new Date().toISOString().split('T')[0]); }
     else {
-        const d = allData[idx];
-        $('#modalTitle').text('แก้ไข'); $('#fAction').val('edit'); $('#fRowIndex').val(d.rowIndex); $('#fOldUrl').val(d['ลิงก์ไฟล์แนบ']);
+        const d = allData[idx]; $('#modalTitle').text('แก้ไข'); $('#fAction').val('edit'); $('#fRowIndex').val(d.rowIndex); $('#fOldUrl').val(d['ลิงก์ไฟล์แนบ']);
         if(d.sheetName) $('#fSheet').val(d.sheetName);
         $('#fSecret').val(d['ชั้นความลับ']); $('#fSpeed').val(d['ชั้นความเร็ว']); $('#fDept').val(d['ฝ่าย']); $('#fWorker').val(d['ผู้ปฏิบัติ']); $('#fMethod').val(d['วิธีการรับเอกสาร']);
         $('input[name="regNo"]').val(d['เลขทะเบียนลงรับ']); $('input[name="bookNo"]').val(d['เลขที่หนังสือ']);
