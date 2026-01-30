@@ -19,87 +19,45 @@ app.get('/', (req, res) => {
 
 // --- API Routes ---
 
-// 1. ดึงข้อมูลเอกสาร (Table Data)
+// 1. ดึงข้อมูล (Table Data & Sheet Names)
 app.get('/api/data', async (req, res) => {
     try {
-        const sheetName = req.query.sheet || 'Sheet1';
-        const response = await axios.get(`${GAS_API_URL}?sheet=${encodeURIComponent(sheetName)}`);
-        // ตรวจสอบว่าได้ข้อมูล JSON จริงไหม
+        // [จุดที่แก้ไข] ส่งต่อ req.query ไปด้วย (เช่น ?type=getSheetNames)
+        const response = await axios.get(GAS_API_URL, { params: req.query });
+        
         if (typeof response.data !== 'object') {
-            console.error("Data fetch error: Received non-object", response.data);
-            res.json([]);
+            console.error("Data Error: Received invalid format");
+            res.json([]); 
         } else {
             res.json(response.data);
         }
     } catch (error) {
-        console.error("Data fetch exception:", error.message);
+        console.error("Data Exception:", error.message);
         res.json([]);
     }
 });
 
-// 2. ดึงข้อมูลการตั้งค่า (Settings) **จุดสำคัญ**
+// 2. ดึง Settings
 app.get('/api/settings', async (req, res) => {
     try {
-        console.log("------------------------------------------------");
-        console.log("1. กำลังเรียกข้อมูล Settings จาก Google...");
-        
-        const response = await axios.get(`${GAS_API_URL}?type=settings`);
-        
-        console.log("2. สถานะตอบกลับ (Status):", response.status);
-        console.log("3. ประเภทข้อมูล (Content-Type):", response.headers['content-type']);
-        
-        // ลองแปลงข้อมูลเป็น String เพื่อดูว่าหน้าตาเป็นยังไง
-        const dataString = JSON.stringify(response.data);
-        console.log("4. ข้อมูลที่ได้ (Data Preview):", dataString.substring(0, 200)); // ดูแค่ 200 ตัวอักษรแรก
-
-        // เช็คว่าเป็น HTML หรือเปล่า (ถ้าใช่ แสดงว่า URL ผิด หรือ สิทธิ์ผิด)
-        if (typeof response.data === 'string' && response.data.trim().startsWith('<')) {
-            console.error("!!! ERROR: ได้รับ HTML แทนที่จะเป็น JSON (สิทธิ์การเข้าถึงอาจจะผิด)");
-            // บังคับส่งค่า Default ให้หน้าเว็บทำงานต่อได้
-            return res.json({
-                sheet: [{ label: "สมุดสำรอง (Connection Error)", value: "Sheet1" }]
-            });
-        }
-
-        if (typeof response.data !== 'object') {
-            console.error("!!! ERROR: รูปแบบข้อมูลไม่ถูกต้อง");
-            res.json({});
-        } else {
-            console.log(">>> สำเร็จ! ส่งข้อมูลไปหน้าเว็บ");
-            res.json(response.data);
-        }
-        console.log("------------------------------------------------");
-
+        const response = await axios.get(GAS_API_URL, { params: { type: 'settings' } });
+        res.json(response.data);
     } catch (error) {
-        console.error("!!! CRITICAL ERROR:", error.message);
-        // กรณีเชื่อมต่อไม่ได้จริงๆ ส่งค่าว่างกลับไป
         res.json({});
     }
 });
 
-// 3. บันทึกการตั้งค่า
+// 3. บันทึก Settings
 app.post('/api/save-settings', async (req, res) => {
     try {
         await axios.post(GAS_API_URL, { action: 'saveSettings', settings: req.body.settings });
         res.json({ status: 'success' });
     } catch (error) {
-        console.error("Save Settings Error:", error.message);
         res.status(500).json({ status: 'error' });
     }
 });
 
-// 4. บันทึกข้อมูลแบบก้อน (Bulk Import)
-app.post('/api/bulk-submit', async (req, res) => {
-    try {
-        await axios.post(GAS_API_URL, { action: 'bulkImport', sheetName: req.body.sheetName, rows: req.body.rows });
-        res.json({ status: 'success' });
-    } catch (error) {
-        console.error("Bulk Import Error:", error.message);
-        res.status(500).json({ status: 'error' });
-    }
-});
-
-// 5. บันทึก/แก้ไขข้อมูลรายแถว
+// 4. บันทึกข้อมูล (Add/Edit)
 app.post('/submit', upload.single('pdfFile'), async (req, res) => {
     try {
         const file = req.file;
@@ -136,4 +94,3 @@ app.post('/submit', upload.single('pdfFile'), async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
