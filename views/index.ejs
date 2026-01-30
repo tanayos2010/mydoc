@@ -18,7 +18,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         select option { background-color: white !important; color: black !important; }
         
-        /* บังคับตารางให้กว้างเต็ม และจัดแนวตั้งกึ่งกลาง */
+        /* Table Styles */
         table.dataTable { width: 100% !important; }
         table.dataTable thead th { white-space: nowrap; background-color: #f8f9fa; vertical-align: middle; }
         table.dataTable tbody td { vertical-align: middle; }
@@ -100,9 +100,18 @@
                         <thead class="table-dark">
                             <tr>
                                 <th style="width: 50px;" class="text-center">แก้ไข</th>
-                                <th style="width: 120px;">เลขทะเบียน</th>
-                                <th style="min-width: 400px;">เรื่อง (Subject)</th> <th style="width: 100px;">ลงวันที่</th>
-                                <th style="width: 150px;">ผู้ปฏิบัติ</th>
+                                <th>เลขทะเบียน</th>
+                                <th>ความลับ</th>
+                                <th>ความเร็ว</th>
+                                <th>เลขที่หนังสือ</th>
+                                <th>ลงวันที่</th>
+                                <th>จาก</th>
+                                <th>ถึง</th>
+                                <th>เรื่อง</th>
+                                <th>ฝ่าย</th>
+                                <th>ผู้ปฏิบัติ</th>
+                                <th>วิธีรับ</th>
+                                <th>หมายเหตุ</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -244,40 +253,49 @@ function popDD(sel, items, blank=false) {
     if(items) items.forEach(i => d.append(`<option value="${i.value}">${i.label}</option>`));
 }
 
-// --- Table Logic ---
+// --- Table Logic (Unified Columns) ---
 function loadTable(sheet, mode) {
     const tid = mode==='view'?'#viewTable':'#editTable';
     if($.fn.DataTable.isDataTable(tid)) $(tid).DataTable().destroy();
     
-    // ฟังก์ชันสร้างลิงก์ (ใช้ร่วมกันทั้ง 2 ตาราง)
-    const renderLink = (data, type, row) => {
-        if(row['ลิงก์ไฟล์แนบ'] && row['ลิงก์ไฟล์แนบ'].includes('http')) {
-            return `<a href="${row['ลิงก์ไฟล์แนบ']}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${data}</a>`;
-        }
-        return data;
-    };
+    // ฟังก์ชันสร้างลิงก์และปุ่ม
+    const renderLink = (d, t, r) => (r['ลิงก์ไฟล์แนบ'] && r['ลิงก์ไฟล์แนบ'].includes('http')) ? `<a href="${r['ลิงก์ไฟล์แนบ']}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> ${d}</a>` : d;
+    const renderBadge = d => d ? `<span class="badge bg-secondary">${d}</span>` : '-';
+
+    // 1. กำหนดคอลัมน์ข้อมูลมาตรฐาน (12 ช่อง)
+    const dataColumns = [
+        { data: "เลขทะเบียนลงรับ", render: renderLink },
+        { data: "ชั้นความลับ", render: renderBadge },
+        { data: "ชั้นความเร็ว" },
+        { data: "เลขที่หนังสือ" },
+        { data: "ลงวันที่" },
+        { data: "จาก" },
+        { data: "ถึง" },
+        { data: "ชื่อเรื่อง", className: "text-wrap", width: "300px" }, // ตัดคำอัตโนมัติ
+        { data: "ฝ่าย" },
+        { data: "ผู้ปฏิบัติ" },
+        { data: "วิธีการรับเอกสาร" },
+        { data: "หมายเหตุ" }
+    ];
 
     let cols = [];
     if(mode === 'view') {
-        cols = [
-            { data: "เลขทะเบียนลงรับ", render: renderLink },
-            { data: "ชั้นความลับ", render: d=>d?`<span class="badge bg-secondary">${d}</span>`:'-' },
-            { data: "ชั้นความเร็ว" }, { data: "เลขที่หนังสือ" }, { data: "ลงวันที่" }, { data: "จาก" }, { data: "ถึง" }, { data: "ชื่อเรื่อง" }, { data: "ฝ่าย" }, { data: "ผู้ปฏิบัติ" }, { data: "วิธีการรับเอกสาร" }, { data: "หมายเหตุ" }
-        ];
+        // หน้าค้นหา: ใช้คอลัมน์มาตรฐานเลย
+        cols = dataColumns;
     } else {
-        // --- ส่วนแก้ไข: เพิ่มลิงก์ และ กำหนดความกว้าง ---
+        // หน้าแก้ไข: เพิ่มปุ่มแก้ไขข้างหน้าสุด + ตามด้วยข้อมูลครบทุกช่อง
         cols = [
-            { data: null, className: "text-center", width: "50px", render:(d,t,r,m)=>`<button class="btn btn-warning btn-sm" onclick="openModal('edit',${m.row})"><i class="fas fa-pen"></i></button>` },
-            { data: "เลขทะเบียนลงรับ", width: "120px", render: renderLink }, // ใส่ลิงก์ให้ตรงนี้ด้วย
-            { data: "ชื่อเรื่อง", className: "text-wrap", width: "400px" }, // บังคับตัดคำและกว้าง 400px
-            { data: "ลงวันที่", className: "text-center", width: "100px" },
-            { data: "ผู้ปฏิบัติ", width: "150px" }
+            { 
+                data: null, className: "text-center", width: "50px",
+                render:(d,t,r,m)=>`<button class="btn btn-warning btn-sm" onclick="openModal('edit',${m.row})"><i class="fas fa-pen"></i></button>` 
+            },
+            ...dataColumns // Spread Operator: เอาข้อมูลมาตรฐานมาต่อท้ายเลย
         ];
     }
 
     const dt = $(tid).DataTable({
         ajax: { url: "/api/data?sheet="+encodeURIComponent(sheet), dataSrc: j => { if(mode==='edit') allData=j; return j; } },
-        columns: cols, order: [[ 1, "desc" ]],
+        columns: cols, order: [[ mode==='view'?0:1, "desc" ]], // ถ้าหน้า edit ให้เรียงคอลัมน์ 1 (ทะเบียน) เพราะ 0 คือปุ่ม
         language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
         autoWidth: false, scrollX: true, destroy: true
     });
